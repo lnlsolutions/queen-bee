@@ -203,7 +203,7 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
 (function () {
   const $ = QB.$, $$ = QB.$$;
   const KEY = 'qb_portal_ok';
-  const state = { leads: [], tab: 'dash', q: '', current: null, photos: {}, reviews: null, docs: null, templates: null };
+  const state = { leads: [], tab: 'dash', q: '', current: null, photos: {}, reviews: null, docs: null, templates: null, settings: null, docFilter: { type: 'all', status: 'all' } };
 
   const STATUSES = ['New request', 'Contacted', 'Walkthrough set', 'Quote sent', 'Won', 'Lost'];
   const STAGES = [
@@ -769,8 +769,37 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
         state.docs = [];
       }
     }
+    if (!state.settings) {
+      try {
+        const r = await QB.api('settings', {});
+        state.settings = r.settings || defaultSettings();
+      } catch (e) {
+        state.settings = defaultSettings();
+      }
+    }
     return true;
   }
+
+  function defaultSettings() {
+    return {
+      business_name: "Queen Bee's Painting & Remodeling",
+      tagline: 'Painting & Remodeling',
+      phone: QB.CONFIG.PHONE,
+      email: QB.CONFIG.EMAIL,
+      address: 'Phoenix, Arizona',
+      license: 'Arizona LLC · Licensed & insured',
+      accent: '#D4AF6A',
+      default_tax: 0,
+      default_deposit: 30,
+      quote_days: 30,
+      invoice_days: 15,
+      default_terms: 'Quote valid 30 days. 30% deposit reserves the date, balance due on completion.',
+      default_notes: '',
+      payment_instructions: 'Payment by card, ACH or Zelle. Deposit is applied to the final invoice.',
+      footer: "Queen Bee's Painting & Remodeling · Phoenix, Arizona",
+    };
+  }
+  const S = () => state.settings || defaultSettings();
 
   const SEED = [
     {
@@ -826,70 +855,224 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
   const docTotal = (items) => items.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.rate) || 0), 0);
 
   function renderDocs(el) {
-    if (!state.docs || !state.templates) {
+    if (!state.docs || !state.templates || !state.settings) {
       el.innerHTML = '<div class="empty">Loading documents…</div>';
       ensureDocs().then(() => renderDocs(el));
       return;
     }
-    const docs = state.docs.filter((d) => !state.q || [d.doc_ref, d.client_name, d.type].join(' ').toLowerCase().includes(state.q));
+    const S0 = S();
+    const f = state.docFilter;
+    let docs = state.docs.filter((d) => !state.q || [d.doc_ref, d.client_name, d.type, d.status, d.template_name].join(' ').toLowerCase().includes(state.q));
+    if (f.type !== 'all') docs = docs.filter((d) => d.type === f.type);
+    if (f.status !== 'all') docs = docs.filter((d) => (d.status || 'Draft') === f.status);
+
     const quotes = state.docs.filter((d) => d.type === 'quote');
     const invoices = state.docs.filter((d) => d.type === 'invoice');
-    const outstanding = invoices.filter((d) => d.status !== 'Paid' && d.status !== 'Void').reduce((s, d) => s + (Number(d.total) || 0), 0);
-    const accepted = quotes.filter((d) => ['Accepted', 'Paid'].includes(d.status)).reduce((s, d) => s + (Number(d.total) || 0), 0);
+    const outstanding = invoices.filter((d) => !['Paid', 'Void'].includes(d.status)).reduce((a, d) => a + (Number(d.total) || 0), 0);
+    const accepted = quotes.filter((d) => ['Accepted', 'Paid'].includes(d.status)).reduce((a, d) => a + (Number(d.total) || 0), 0);
+    const collected = invoices.filter((d) => d.status === 'Paid').reduce((a, d) => a + (Number(d.total) || 0), 0);
 
     el.innerHTML =
-      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+      '<div class="cards" style="grid-template-columns:repeat(5,1fr)">' +
         '<div class="kpi dark"><div class="lab">Quotes</div><div class="val">' + quotes.length + '</div><div class="sub">' + money(accepted) + ' accepted</div></div>' +
         '<div class="kpi pink"><div class="lab">Invoices</div><div class="val">' + invoices.length + '</div><div class="sub">' + money(outstanding) + ' outstanding</div></div>' +
-        '<div class="kpi"><div class="lab">Templates</div><div class="val">' + state.templates.length + '</div><div class="sub">editable and importable</div></div>' +
-        '<div class="kpi"><div class="lab">Avg quote</div><div class="val">' + money(quotes.length ? quotes.reduce((s, d) => s + (Number(d.total) || 0), 0) / quotes.length : 0) + '</div><div class="sub">across ' + quotes.length + ' quotes</div></div>' +
+        '<div class="kpi"><div class="lab">Collected</div><div class="val">' + money(collected) + '</div><div class="sub">paid invoices</div></div>' +
+        '<div class="kpi"><div class="lab">Templates</div><div class="val">' + state.templates.length + '</div><div class="sub">editable · importable</div></div>' +
+        '<div class="kpi"><div class="lab">Avg quote</div><div class="val">' + money(quotes.length ? quotes.reduce((a, d) => a + (Number(d.total) || 0), 0) / quotes.length : 0) + '</div><div class="sub">across ' + quotes.length + ' quotes</div></div>' +
       '</div>' +
+
       '<div class="panel"><div class="panel-head"><h2>Documents</h2><div class="spacer"></div>' +
         '<button class="btn btn-outline btn-sm" id="newQuote">New quote</button>' +
         '<button class="btn btn-outline btn-sm" id="newInv">New invoice</button>' +
-        '<button class="btn btn-pink btn-sm" id="newTpl">Templates</button></div>' +
-        '<div class="panel-body">' + (docs.length ?
-          '<table><thead><tr><th>Number</th><th>Client</th><th>Type</th><th class="num">Total</th><th>Status</th><th>Issued</th><th></th></tr></thead><tbody>' +
-          docs.map((d) => '<tr data-doc="' + d.id + '">' +
-            '<td><b>' + QB.esc(d.doc_ref || '') + '</b><div style="font-size:11px;color:var(--muted)">' + QB.esc(d.template_name || '') + '</div></td>' +
-            '<td>' + QB.esc(d.client_name || '—') + '</td>' +
-            '<td><span class="pill ' + (d.type === 'invoice' ? 'quote' : 'new') + '">' + QB.esc(d.type === 'invoice' ? 'Invoice' : 'Quote') + '</span></td>' +
-            '<td class="num"><b>' + money(d.total) + '</b></td>' +
-            '<td><span class="pill ' + (d.status === 'Paid' || d.status === 'Accepted' ? 'won' : d.status === 'Void' ? 'lost' : 'contacted') + '">' + QB.esc(d.status || 'Draft') + '</span></td>' +
-            '<td>' + QB.esc(QB.fmtDate(d.issued_at)) + '</td>' +
-            '<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" data-print="' + d.id + '">Preview</button> <button class="btn btn-outline btn-sm" data-edit="' + d.id + '">Edit</button></td>' +
-          '</tr>').join('') + '</tbody></table>'
-          : '<div class="empty">No quotes or invoices yet. Start from a template and it fills in the line items, terms and deposit.</div>') +
+        '<button class="btn btn-outline btn-sm" id="exportDocs">Export CSV</button>' +
+        '<button class="btn btn-pink btn-sm" id="newTpl">New template</button></div>' +
+        '<div class="panel-body" style="padding:12px 16px 0"><div class="acts" style="align-items:center">' +
+          [['all', 'All'], ['quote', 'Quotes'], ['invoice', 'Invoices']].map(([k, lbl]) =>
+            '<button data-ftype="' + k + '" class="' + (f.type === k ? 'primary' : '') + '">' + lbl + '</button>').join('') +
+          '<select id="fStatus" style="border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;font-family:inherit;font-size:12.5px;font-weight:700">' +
+            ['all', 'Draft', 'Sent', 'Accepted', 'Paid', 'Void'].map((s) => '<option value="' + s + '"' + (f.status === s ? ' selected' : '') + '>' + (s === 'all' ? 'Any status' : s) + '</option>').join('') +
+          '</select>' +
+          '<span style="font-size:12px;color:var(--muted);margin-left:auto">' + docs.length + ' shown</span>' +
         '</div></div>' +
-      '<div class="panel"><div class="panel-head"><h2>Your templates</h2><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">Edit, duplicate or import a template any time</span></div>' +
+        '<div class="panel-body">' + (docs.length ?
+          '<table><thead><tr><th>Number</th><th>Client</th><th>Type</th><th class="num">Total</th><th>Status</th><th>Issued</th><th>Due</th><th></th></tr></thead><tbody>' +
+          docs.map((d) => '<tr data-doc="' + d.id + '">' +
+            '<td><b>' + QB.esc(d.doc_ref || '') + '</b><div style="font-size:11px;color:var(--muted)">' + QB.esc(d.template_name || '—') + '</div></td>' +
+            '<td>' + QB.esc(d.client_name || '—') + '</td>' +
+            '<td><span class="pill ' + (d.type === 'invoice' ? 'quote' : 'new') + '">' + (d.type === 'invoice' ? 'Invoice' : 'Quote') + '</span></td>' +
+            '<td class="num"><b>' + money(d.total) + '</b>' + (Number(d.deposit) ? '<div style="font-size:10.5px;color:var(--muted)">' + money(d.deposit) + ' deposit</div>' : '') + '</td>' +
+            '<td><select data-dstatus="' + d.id + '" style="border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-family:inherit;font-size:11.5px;font-weight:700">' +
+              ['Draft', 'Sent', 'Accepted', 'Paid', 'Void'].map((st) => '<option' + ((d.status || 'Draft') === st ? ' selected' : '') + '>' + st + '</option>').join('') +
+            '</select></td>' +
+            '<td>' + QB.esc(QB.fmtDate(d.issued_at)) + '</td>' +
+            '<td>' + QB.esc(d.due_at ? QB.fmtDate(d.due_at) : '—') + '</td>' +
+            '<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" data-print="' + d.id + '">Preview</button> ' +
+              '<button class="btn btn-outline btn-sm" data-edit="' + d.id + '">Edit</button> ' +
+              '<button class="btn btn-outline btn-sm" data-dupdoc="' + d.id + '" title="Duplicate">⧉</button> ' +
+              '<button class="btn btn-outline btn-sm" data-deldoc="' + d.id + '" title="Delete">×</button></td>' +
+          '</tr>').join('') + '</tbody></table>'
+          : '<div class="empty">Nothing matches that filter. Start from a template and it fills the line items, terms and deposit.</div>') +
+        '</div></div>' +
+
+      '<details class="panel" id="brandPanel"><summary style="cursor:pointer;padding:15px 18px;display:flex;align-items:center;gap:10px;font-family:var(--display);font-size:16px;list-style:none">' +
+        '<span>Brand &amp; defaults</span><span style="font-size:12px;color:var(--muted);font-family:inherit;font-weight:600">drives every printed quote and invoice</span>' +
+        '<span style="margin-left:auto;font-size:12px;color:var(--pink-deep);font-weight:800">' + QB.esc(S0.business_name) + '</span></summary>' +
+        '<div class="panel-body pad">' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">' +
+            '<div class="field" style="margin:0"><label>Business name</label><input id="stName" value="' + QB.esc(S0.business_name) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Tagline</label><input id="stTag" value="' + QB.esc(S0.tagline) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Accent color</label><div style="display:flex;gap:8px"><input id="stAccent" type="color" value="' + QB.esc(S0.accent) + '" style="width:52px;padding:3px;height:44px"><input id="stAccentHex" value="' + QB.esc(S0.accent) + '" style="flex:1"></div></div>' +
+            '<div class="field" style="margin:0"><label>Phone</label><input id="stPhone" value="' + QB.esc(S0.phone) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Email</label><input id="stEmail" value="' + QB.esc(S0.email) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Address</label><input id="stAddr" value="' + QB.esc(S0.address) + '"></div>' +
+            '<div class="field" style="margin:0"><label>License line</label><input id="stLicense" value="' + QB.esc(S0.license) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Default tax %</label><input id="stTax" type="number" step="0.1" value="' + (Number(S0.default_tax) || 0) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Default deposit %</label><input id="stDep" type="number" step="1" value="' + (Number(S0.default_deposit) || 0) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Quote valid (days)</label><input id="stQDays" type="number" value="' + (Number(S0.quote_days) || 30) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Invoice due (days)</label><input id="stIDays" type="number" value="' + (Number(S0.invoice_days) || 15) + '"></div>' +
+            '<div class="field" style="margin:0"><label>Footer</label><input id="stFooter" value="' + QB.esc(S0.footer) + '"></div>' +
+          '</div>' +
+          '<div class="field" style="margin-top:10px"><label>Default terms</label><textarea id="stTerms" rows="2">' + QB.esc(S0.default_terms) + '</textarea></div>' +
+          '<div class="field"><label>Default notes</label><textarea id="stNotes" rows="2">' + QB.esc(S0.default_notes) + '</textarea></div>' +
+          '<div class="field"><label>Payment instructions (printed on invoices)</label><textarea id="stPay" rows="2">' + QB.esc(S0.payment_instructions) + '</textarea></div>' +
+          '<div class="acts"><button class="primary" id="saveBrand">Save brand &amp; defaults</button><span style="font-size:12px;color:var(--muted);align-self:center">New documents pick these up immediately</span></div>' +
+        '</div></details>' +
+
+      '<div class="panel"><div class="panel-head"><h2>Your templates</h2><div class="spacer"></div>' +
+        '<button class="btn btn-outline btn-sm" id="importTpl">Import JSON</button>' +
+        '<button class="btn btn-pink btn-sm" id="newTpl2">New blank template</button></div>' +
         '<div class="panel-body pad"><div class="photo-grid" style="grid-template-columns:repeat(3,1fr)">' +
           state.templates.map((t) => {
             const items = parseItems(t.items);
             return '<div style="border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff">' +
-              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="pill ' + (t.type === 'invoice' ? 'quote' : 'new') + '">' + QB.esc(t.type === 'invoice' ? 'Invoice' : 'Quote') + '</span>' +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="pill ' + (t.type === 'invoice' ? 'quote' : 'new') + '">' + (t.type === 'invoice' ? 'Invoice' : 'Quote') + '</span>' +
               '<b style="font-size:13.5px">' + QB.esc(t.name) + '</b></div>' +
-              '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">' + items.length + ' line items · tax ' + (Number(t.tax_pct) || 0) + '% · deposit ' + (Number(t.deposit_pct) || 0) + '%</div>' +
+              '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">' + items.length + ' lines · tax ' + (Number(t.tax_pct) || 0) + '% · deposit ' + (Number(t.deposit_pct) || 0) + '%</div>' +
               '<div style="font-family:var(--display);font-size:17px;margin-bottom:10px">' + money(docTotal(items)) + '</div>' +
-              '<div class="acts"><button data-tpl-edit="' + t.id + '">Edit</button><button data-tpl-use="' + t.id + '">Use</button><button data-tpl-dup="' + t.id + '">Duplicate</button></div>' +
+              '<div class="acts"><button data-tpl-edit="' + t.id + '">Edit</button><button data-tpl-use="' + t.id + '">Use</button><button data-tpl-dup="' + t.id + '">Copy</button></div>' +
             '</div>';
           }).join('') +
-        '</div><div class="acts" style="margin-top:14px"><button class="primary" id="importTpl">Import template</button><button id="newTpl2">New blank template</button></div></div></div>';
+        '</div></div></div>';
 
     const bind = (sel, fn) => { const n = $(sel); if (n) n.onclick = fn; };
     bind('#newQuote', () => docEditor(null, 'quote'));
     bind('#newInv', () => docEditor(null, 'invoice'));
-    bind('#newTpl', () => templatesPanel());
+    bind('#newTpl', () => templateEditor(null));
     bind('#newTpl2', () => templateEditor(null));
     bind('#importTpl', () => importTemplate());
+    bind('#exportDocs', exportDocs);
+
+    $$('button[data-ftype]').forEach((b) => b.onclick = () => { state.docFilter.type = b.dataset.ftype; render(); });
+    const fs = $('#fStatus');
+    if (fs) fs.onchange = () => { state.docFilter.status = fs.value; render(); };
 
     $$('button[data-print]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); const d = state.docs.find((x) => x.id === b.dataset.print); if (d) printDoc(d); });
     $$('button[data-edit]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); const d = state.docs.find((x) => x.id === b.dataset.edit); if (d) docEditor(d, d.type); });
+    $$('button[data-dupdoc]').forEach((b) => b.onclick = (e) => { e.stopPropagation(); const d = state.docs.find((x) => x.id === b.dataset.dupdoc); if (d) duplicateDoc(d); });
+    $$('button[data-deldoc]').forEach((b) => b.onclick = async (e) => {
+      e.stopPropagation();
+      const d = state.docs.find((x) => x.id === b.dataset.deldoc);
+      if (!d) return;
+      if (!window.confirm('Delete ' + d.doc_ref + '? This cannot be undone.')) return;
+      try {
+        await QB.api('deleteDoc', { id: d.id });
+        state.docs = null;
+        await ensureDocs();
+        QB.toast(d.doc_ref + ' deleted');
+        render();
+      } catch (err) { QB.toast('Could not delete'); }
+    });
+    $$('select[data-dstatus]').forEach((sel) => sel.onchange = async () => {
+      const d = state.docs.find((x) => x.id === sel.dataset.dstatus);
+      if (!d) return;
+      await setDocStatus(d, sel.value);
+    });
+
     $$('button[data-tpl-edit]').forEach((b) => b.onclick = () => { const t = state.templates.find((x) => x.id === b.dataset.tplEdit); if (t) templateEditor(t); });
     $$('button[data-tpl-use]').forEach((b) => b.onclick = () => { const t = state.templates.find((x) => x.id === b.dataset.tplUse); if (t) docEditor(null, t.type, t); });
     $$('button[data-tpl-dup]').forEach((b) => b.onclick = () => {
       const t = state.templates.find((x) => x.id === b.dataset.tplDup);
       if (t) templateEditor(Object.assign({}, t, { id: null, name: t.name + ' copy' }));
     });
+
+    const sa = $('#stAccent'), sh = $('#stAccentHex');
+    if (sa && sh) {
+      sa.oninput = () => { sh.value = sa.value; };
+      sh.oninput = () => { if (/^#[0-9a-f]{6}$/i.test(sh.value)) sa.value = sh.value; };
+    }
+    bind('#saveBrand', async () => {
+      const payload = {
+        business_name: $('#stName').value.trim(),
+        tagline: $('#stTag').value.trim(),
+        phone: $('#stPhone').value.trim(),
+        email: $('#stEmail').value.trim(),
+        address: $('#stAddr').value.trim(),
+        license: $('#stLicense').value.trim(),
+        accent: $('#stAccentHex').value.trim() || '#D4AF6A',
+        default_tax: Number($('#stTax').value) || 0,
+        default_deposit: Number($('#stDep').value) || 0,
+        quote_days: Number($('#stQDays').value) || 30,
+        invoice_days: Number($('#stIDays').value) || 15,
+        default_terms: $('#stTerms').value.trim(),
+        default_notes: $('#stNotes').value.trim(),
+        payment_instructions: $('#stPay').value.trim(),
+        footer: $('#stFooter').value.trim(),
+      };
+      try {
+        const r = await QB.api('saveSettings', { settings: payload });
+        if (!r.ok) throw new Error(r.error || 'failed');
+        state.settings = r.settings;
+        QB.toast('Brand and defaults saved');
+        render();
+      } catch (e) { QB.toast('Could not save settings'); }
+    });
+  }
+
+  async function setDocStatus(d, status) {
+    const payload = {
+      id: d.id, doc_ref: d.doc_ref, type: d.type, lead_ref: d.lead_ref,
+      client_name: d.client_name, template_name: d.template_name, items: d.items,
+      tax_pct: d.tax_pct, deposit_pct: d.deposit_pct, status,
+      issued_at: d.issued_at, due_at: d.due_at, notes: d.notes, terms: d.terms,
+      paid_at: status === 'Paid' ? new Date().toISOString() : d.paid_at,
+    };
+    try {
+      const r = await QB.api('saveDoc', { doc: payload });
+      if (!r.ok) throw new Error(r.error || 'failed');
+      state.docs = null;
+      await ensureDocs();
+      QB.toast(d.doc_ref + ' marked ' + status);
+      render();
+    } catch (e) { QB.toast('Could not update status'); }
+  }
+
+  async function duplicateDoc(d) {
+    const payload = {
+      id: null, doc_ref: '', type: d.type, lead_ref: d.lead_ref,
+      client_name: d.client_name, template_name: d.template_name, items: d.items,
+      tax_pct: d.tax_pct, deposit_pct: d.deposit_pct, status: 'Draft',
+      issued_at: new Date().toISOString(), due_at: d.due_at, notes: d.notes, terms: d.terms,
+    };
+    try {
+      const r = await QB.api('saveDoc', { doc: payload });
+      if (!r.ok) throw new Error(r.error || 'failed');
+      state.docs = null;
+      await ensureDocs();
+      QB.toast('Copied to ' + r.doc.doc_ref);
+      render();
+    } catch (e) { QB.toast('Could not duplicate'); }
+  }
+
+  function exportDocs() {
+    const cols = ['doc_ref', 'type', 'client_name', 'lead_ref', 'template_name', 'subtotal', 'tax_pct', 'tax', 'total', 'deposit_pct', 'deposit', 'status', 'issued_at', 'due_at', 'paid_at'];
+    const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const rows = [cols.join(',')].concat((state.docs || []).map((d) => cols.map((c) => esc(d[c])).join(',')));
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'queen-bee-quotes-invoices-' + QB.todayISO() + '.csv';
+    a.click();
+    QB.toast('CSV downloaded');
   }
 
   function templatesPanel() {
@@ -945,29 +1128,43 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
 
   /* document editor */
   function docEditor(doc, type, tpl) {
-    const base = doc || (tpl ? { type: tpl.type, template_name: tpl.name, tax_pct: tpl.tax_pct, deposit_pct: tpl.deposit_pct, notes: tpl.notes, terms: tpl.terms } : { type: type || 'quote', status: 'Draft', tax_pct: 0, deposit_pct: 30 });
+    const S0 = S();
+    const kind = doc ? doc.type : (tpl ? tpl.type : (type || 'quote'));
+    const base = doc || (tpl
+      ? { template_name: tpl.name, tax_pct: tpl.tax_pct, deposit_pct: tpl.deposit_pct, notes: tpl.notes, terms: tpl.terms }
+      : { status: 'Draft', tax_pct: S0.default_tax, deposit_pct: S0.default_deposit, notes: S0.default_notes, terms: S0.default_terms });
     const items = doc ? parseItems(doc.items) : (tpl ? parseItems(tpl.items) : []);
-    const opts = state.leads.map((l) => '<option value="' + QB.esc(l.ref) + '" data-name="' + QB.esc(l.name) + '"' + (doc && doc.lead_ref === l.ref ? ' selected' : '') + '>' + QB.esc(l.name) + ' · ' + QB.esc(l.ref) + '</option>').join('');
-    modal('<h3>' + (doc ? 'Edit ' + QB.esc(doc.doc_ref) : (type === 'invoice' ? 'New invoice' : 'New quote')) + '</h3>' +
+    const days = kind === 'invoice' ? (Number(S0.invoice_days) || 15) : (Number(S0.quote_days) || 30);
+    const issued = (doc && doc.issued_at) ? String(doc.issued_at).slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const due = (doc && doc.due_at) ? String(doc.due_at).slice(0, 10) : new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+    const opts = state.leads.map((l) => '<option value="' + QB.esc(l.ref) + '"' + (doc && doc.lead_ref === l.ref ? ' selected' : '') + '>' + QB.esc(l.name) + ' · ' + QB.esc(l.ref) + '</option>').join('');
+
+    modal('<h3>' + (doc ? 'Edit ' + QB.esc(doc.doc_ref) : (kind === 'invoice' ? 'New invoice' : 'New quote')) + '</h3>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
         '<div><label>Client</label><select id="dClient"><option value="">Pick a request…</option>' + opts + '</select></div>' +
-        '<div><label>Template</label><select id="dTpl"><option value="">Blank</option>' + state.templates.filter((t) => t.type === (doc ? doc.type : type)).map((t) => '<option value="' + t.id + '"' + (base.template_name === t.name ? ' selected' : '') + '>' + QB.esc(t.name) + '</option>').join('') + '</select></div>' +
+        '<div><label>Start from template</label><select id="dTpl"><option value="">Blank / current</option>' +
+          state.templates.filter((t) => t.type === kind).map((t) => '<option value="' + t.id + '"' + (base.template_name === t.name ? ' selected' : '') + '>' + QB.esc(t.name) + '</option>').join('') + '</select></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">' +
+        '<div><label>Issued</label><input id="dIssued" type="date" value="' + issued + '"></div>' +
+        '<div><label>Due</label><input id="dDue" type="date" value="' + due + '"></div>' +
+        '<div><label>Status</label><select id="dStatus">' + ['Draft', 'Sent', 'Accepted', 'Paid', 'Void'].map((st) => '<option' + ((base.status || 'Draft') === st ? ' selected' : '') + '>' + st + '</option>').join('') + '</select></div>' +
       '</div>' +
       '<label>Line items · description, qty, rate</label>' + itemsEditorHTML(items) +
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
         '<div><label>Tax %</label><input id="dTax" type="number" step="0.1" value="' + (Number(base.tax_pct) || 0) + '"></div>' +
         '<div><label>Deposit %</label><input id="dDep" type="number" step="1" value="' + (Number(base.deposit_pct) || 0) + '"></div>' +
-        '<div><label>Status</label><select id="dStatus">' + ['Draft', 'Sent', 'Accepted', 'Paid', 'Void'].map((s) => '<option' + (base.status === s ? ' selected' : '') + '>' + s + '</option>').join('') + '</select></div>' +
       '</div>' +
-      '<label>Notes to client</label><textarea id="dNotes" rows="2">' + QB.esc(base.notes || '') + '</textarea>' +
+      '<label>Included / notes to client</label><textarea id="dNotes" rows="2">' + QB.esc(base.notes || '') + '</textarea>' +
       '<label>Terms</label><textarea id="dTerms" rows="3">' + QB.esc(base.terms || '') + '</textarea>' +
-      '<div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button><button class="btn btn-pink btn-sm" id="mSave">Save document</button></div>',
+      '<div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button>' +
+        '<button class="btn btn-outline btn-sm" id="dToTpl">Save as template</button>' +
+        '<button class="btn btn-pink btn-sm" id="mSave">' + (doc ? 'Save changes' : 'Save document') + '</button></div>',
       () => {
         wireItems($('#modalCard'));
         $('#mCancel').onclick = closeModal;
-        const tplSel = $('#dTpl');
-        tplSel.onchange = () => {
-          const t = state.templates.find((x) => x.id === tplSel.value);
+        $('#dTpl').onchange = () => {
+          const t = state.templates.find((x) => x.id === $('#dTpl').value);
           if (!t) return;
           $('#itemsWrap').innerHTML = parseItems(t.items).map(itemRowHTML).join('');
           $('#dTax').value = Number(t.tax_pct) || 0;
@@ -976,43 +1173,66 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
           $('#dNotes').value = t.notes || '';
           wireItems($('#modalCard'));
         };
-        $('#mSave').onclick = async () => {
+        const payload = () => {
           const leadRef = $('#dClient').value;
           const lead = state.leads.find((l) => l.ref === leadRef);
-          const items2 = readItems($('#modalCard'));
-          if (!items2.length) return QB.toast('Add at least one line item');
-          const payload = {
+          const rows = readItems($('#modalCard'));
+          return {
             id: doc ? doc.id : null,
             doc_ref: doc ? doc.doc_ref : '',
-            type: doc ? doc.type : type,
+            type: kind,
             lead_ref: leadRef,
             client_name: lead ? lead.name : (doc ? doc.client_name : ''),
-            template_name: tplSel.options[tplSel.selectedIndex] ? tplSel.options[tplSel.selectedIndex].text : '',
-            items: JSON.stringify(items2),
+            template_name: $('#dTpl').value ? $('#dTpl').options[$('#dTpl').selectedIndex].text : (base.template_name || ''),
+            items: JSON.stringify(rows),
             tax_pct: Number($('#dTax').value) || 0,
             deposit_pct: Number($('#dDep').value) || 0,
             status: $('#dStatus').value,
+            issued_at: $('#dIssued').value ? new Date($('#dIssued').value + 'T12:00:00').toISOString() : new Date().toISOString(),
+            due_at: $('#dDue').value ? new Date($('#dDue').value + 'T12:00:00').toISOString() : '',
             notes: $('#dNotes').value.trim(),
             terms: $('#dTerms').value.trim(),
-            due_at: doc ? doc.due_at : '',
+            paid_at: $('#dStatus').value === 'Paid' ? new Date().toISOString() : (doc ? doc.paid_at : ''),
           };
+        };
+        $('#dToTpl').onclick = async () => {
+          const p = payload();
+          const rows = JSON.parse(p.items);
+          if (!rows.length) return QB.toast('Add a line item first');
+          const name = window.prompt('Template name', p.template_name || (kind === 'invoice' ? 'Invoice template' : 'Quote template'));
+          if (!name) return;
           try {
-            const r = await QB.api('saveDoc', { doc: payload });
+            const r = await QB.api('saveTemplate', { template: {
+              name, type: kind, items: p.items, tax_pct: p.tax_pct,
+              deposit_pct: p.deposit_pct, notes: p.notes, terms: p.terms,
+            } });
+            if (!r.ok) throw new Error(r.error || 'failed');
+            state.templates = null;
+            await ensureDocs();
+            closeModal();
+            QB.toast('Saved as template: ' + name);
+            render();
+          } catch (e) { QB.toast('Could not save template'); }
+        };
+        $('#mSave').onclick = async () => {
+          const p = payload();
+          if (!JSON.parse(p.items).length) return QB.toast('Add at least one line item');
+          try {
+            const r = await QB.api('saveDoc', { doc: p });
             if (!r.ok) throw new Error(r.error || 'failed');
             state.docs = null;
             await ensureDocs();
             closeModal();
-            QB.toast(doc ? 'Document updated' : 'Saved ' + r.doc.doc_ref);
+            QB.toast(doc ? r.doc.doc_ref + ' updated' : 'Saved ' + r.doc.doc_ref);
+            const lead = state.leads.find((l) => l.ref === p.lead_ref);
             if (lead && lead.id) {
               await patch(lead.id, {
-                estimate: payload.type === 'quote' ? r.doc.total : (lead.estimate || 0),
-                log: addTrail(lead, 'quote', (payload.type === 'quote' ? 'Quote ' : 'Invoice ') + r.doc.doc_ref + ' for ' + money(r.doc.total))
+                estimate: p.type === 'quote' ? r.doc.total : (lead.estimate || 0),
+                log: addTrail(lead, 'quote', (p.type === 'quote' ? 'Quote ' : 'Invoice ') + r.doc.doc_ref + ' for ' + money(r.doc.total))
               }, 'Linked to ' + lead.name);
             }
             render();
-          } catch (e) {
-            QB.toast('Could not save: ' + e.message);
-          }
+          } catch (e) { QB.toast('Could not save: ' + e.message); }
         };
       });
   }
@@ -1124,45 +1344,51 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
 
   /* printable document */
   function printDoc(d) {
+    const S0 = S();
     const items = parseItems(d.items);
+    const accent = /^#[0-9a-f]{6}$/i.test(S0.accent || '') ? S0.accent : '#D4AF6A';
     const rows = items.map((it) => '<tr><td>' + QB.esc(it.desc) + '</td><td class="r">' + (Number(it.qty) || 0) + '</td><td class="r">' + money(it.rate) + '</td><td class="r">' + money((Number(it.qty) || 0) * (Number(it.rate) || 0)) + '</td></tr>').join('');
+    const isInv = d.type === 'invoice';
+    const logoBase = location.origin + location.pathname.replace(/crm\.html$/, '');
     const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + QB.esc(d.doc_ref) + '</title>' +
       '<style>@page{margin:18mm}body{font-family:Helvetica,Arial,sans-serif;color:#1A1A1D;margin:0}' +
-      '.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #D4AF6A;padding-bottom:14px;margin-bottom:22px}' +
-      '.brand{display:flex;gap:10px;align-items:center}.bee{width:42px;height:42px}' +
-      '.nm{font-family:Georgia,serif;font-size:19px;font-weight:700;letter-spacing:.01em}' +
-      '.sub{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:#B8935A;margin-top:3px}' +
+      '.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ' + accent + ';padding-bottom:14px;margin-bottom:22px}' +
+      '.brand{display:flex;gap:10px;align-items:center}.bee{width:44px;height:44px}' +
+      '.nm{font-family:Georgia,serif;font-size:19px;font-weight:700}.sub{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:' + accent + ';margin-top:3px}' +
       '.tag{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#D81E6E;font-weight:700}' +
       '.num{font-family:Georgia,serif;font-size:20px;margin-top:2px}' +
       'table{width:100%;border-collapse:collapse;margin-bottom:14px}' +
       'th{text-align:left;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#6C6A70;border-bottom:1px solid #E7E2DC;padding:7px 6px}' +
       'td{padding:8px 6px;border-bottom:1px solid #F1EEEC;font-size:11.5px}.r{text-align:right}' +
-      '.tot{margin-left:auto;width:46%;font-size:12px}' +
-      '.tot div{display:flex;justify-content:space-between;padding:5px 0}' +
+      '.tot{margin-left:auto;width:46%;font-size:12px}.tot div{display:flex;justify-content:space-between;padding:5px 0}' +
       '.tot .big{border-top:2px solid #0A0A0B;margin-top:5px;padding-top:8px;font-size:15px;font-weight:700}' +
-      '.meta{display:flex;gap:34px;font-size:11px;margin-bottom:20px}' +
+      '.meta{display:flex;gap:30px;font-size:11px;margin-bottom:20px}' +
       '.meta b{display:block;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:#6C6A70;margin-bottom:3px}' +
-      '.box{background:#F7F5F3;border-left:3px solid #D4AF6A;padding:11px 13px;font-size:10.5px;line-height:1.55;margin-bottom:14px}' +
-      '.sign{margin-top:34px;display:flex;gap:30px}.sign div{flex:1;border-top:1px solid #0A0A0B;padding-top:5px;font-size:9.5px;color:#6C6A70}' +
-      '.foot{margin-top:26px;border-top:1px solid #E7E2DC;padding-top:9px;font-size:9px;color:#6C6A70;display:flex;justify-content:space-between}' +
+      '.box{background:#F7F5F3;border-left:3px solid ' + accent + ';padding:11px 13px;font-size:10.5px;line-height:1.55;margin-bottom:12px}' +
+      '.pay{border:1px solid #E7E2DC;padding:11px 13px;font-size:10.5px;line-height:1.55;margin-bottom:12px}' +
+      '.sign{margin-top:30px;display:flex;gap:30px}.sign div{flex:1;border-top:1px solid #0A0A0B;padding-top:5px;font-size:9.5px;color:#6C6A70}' +
+      '.foot{margin-top:24px;border-top:1px solid #E7E2DC;padding-top:9px;font-size:9px;color:#6C6A70;display:flex;justify-content:space-between}' +
       '</style></head><body>' +
-      '<div class="hdr"><div class="brand"><img class="bee" src="' + location.origin + location.pathname.replace(/crm\\.html$/, '') + 'assets/img/logo.svg">' +
-      '<div><div class="nm">Queen Bee\u2019s</div><div class="sub">Painting &amp; Remodeling</div></div></div>' +
-      '<div style="text-align:right"><div class="tag">' + (d.type === 'invoice' ? 'Invoice' : 'Estimate') + '</div><div class="num">' + QB.esc(d.doc_ref) + '</div>' +
-      '<div style="font-size:10px;color:#6C6A70;margin-top:4px">' + QB.esc(QB.fmtDate(d.issued_at)) + '</div></div></div>' +
+      '<div class="hdr"><div class="brand"><img class="bee" src="' + logoBase + 'assets/img/logo.svg">' +
+      '<div><div class="nm">' + QB.esc(S0.business_name) + '</div><div class="sub">' + QB.esc(S0.tagline) + '</div></div></div>' +
+      '<div style="text-align:right"><div class="tag">' + (isInv ? 'Invoice' : 'Estimate') + '</div><div class="num">' + QB.esc(d.doc_ref) + '</div>' +
+      '<div style="font-size:10px;color:#6C6A70;margin-top:4px">Issued ' + QB.esc(QB.fmtDate(d.issued_at)) + '</div></div></div>' +
       '<div class="meta"><div><b>Prepared for</b>' + QB.esc(d.client_name || '') + '</div>' +
-      '<div><b>Reference</b>' + QB.esc(d.lead_ref || '') + '</div>' +
-      '<div><b>Valid</b>30 days</div>' +
-      '<div><b>Contact</b>' + QB.esc(QB.CONFIG.PHONE) + '</div></div>' +
+      '<div><b>Reference</b>' + QB.esc(d.lead_ref || '—') + '</div>' +
+      '<div><b>' + (isInv ? 'Due' : 'Valid through') + '</b>' + QB.esc(d.due_at ? QB.fmtDate(d.due_at) : (isInv ? 'On receipt' : '30 days')) + '</div>' +
+      '<div><b>Contact</b>' + QB.esc(S0.phone) + '</div></div>' +
       '<table><thead><tr><th>Description</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="tot"><div><span>Subtotal</span><span>' + money(d.subtotal) + '</span></div>' +
       (Number(d.tax_pct) ? '<div><span>Tax (' + d.tax_pct + '%)</span><span>' + money(d.tax) + '</span></div>' : '') +
       '<div class="big"><span>Total</span><span>' + money(d.total) + '</span></div>' +
-      (Number(d.deposit_pct) ? '<div><span>Deposit due (' + d.deposit_pct + '%)</span><span>' + money(d.deposit) + '</span></div>' : '') + '</div>' +
+      (Number(d.deposit_pct) ? '<div><span>Deposit due (' + d.deposit_pct + '%)</span><span>' + money(d.deposit) + '</span></div>' : '') +
+      (Number(d.deposit) ? '<div><span>Balance on completion</span><span>' + money((Number(d.total) || 0) - (Number(d.deposit) || 0)) + '</span></div>' : '') + '</div>' +
       (d.notes ? '<div class="box"><b>Included</b><br>' + QB.esc(d.notes) + '</div>' : '') +
+      (S0.payment_instructions ? '<div class="pay"><b>How to pay</b><br>' + QB.esc(S0.payment_instructions) + '</div>' : '') +
       (d.terms ? '<div class="box"><b>Terms</b><br>' + QB.esc(d.terms) + '</div>' : '') +
-      '<div class="sign"><div>Client signature</div><div>Date</div><div>Queen Bee\u2019s representative</div></div>' +
-      '<div class="foot"><span>Queen Bee\u2019s Painting &amp; Remodeling LLC · Arizona LLC since 2018 · Licensed &amp; insured</span><span>' + QB.esc(QB.CONFIG.PHONE) + ' · ' + QB.esc(QB.CONFIG.EMAIL) + '</span></div>' +
+      '<div class="sign"><div>Client signature</div><div>Date</div><div>' + QB.esc(S0.business_name) + '</div></div>' +
+      '<div class="foot"><span>' + QB.esc(S0.license) + (S0.address ? ' · ' + QB.esc(S0.address) : '') + '</span><span>' + QB.esc(S0.phone) + ' · ' + QB.esc(S0.email) + '</span></div>' +
+      '<div style="font-size:8.5px;color:#9A949A;margin-top:6px">' + QB.esc(S0.footer) + '</div>' +
       '</body></html>';
     const w = window.open('', '_blank');
     if (!w) return QB.toast('Allow pop-ups to preview the document');
