@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Free Photo Quote | Queen Bee's Painting &amp; Remodeling</title>
-<meta name="description" content="Send photos of your project and get a written painting or remodeling estimate from Queen Bee's in Phoenix, usually within 48 hours.">
+<meta name="description" content="Send photos of your project and book a walkthrough with Queen Bee's in Phoenix. Every job is quoted in writing after we see it.">
 <link rel="icon" href="assets/img/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -102,8 +102,8 @@
   <div class="qhead">
     <div class="wrap">
       <span class="eyebrow gold">Free estimate</span>
-      <h1>Show us the job. We'll price it.</h1>
-      <p>Four short steps. Add photos of the room, cabinets or exterior and we will send a written estimate, usually within 48 hours. No obligation, no sales visit for paint and cabinets.</p>
+      <h1>Show us the job. We'll walk it.</h1>
+      <p>Four short steps. Add photos of the room, cabinets or exterior and we will set the walkthrough, then send a written quote for your exact scope. Free, no obligation.</p>
     </div>
   </div>
 
@@ -130,7 +130,7 @@
             <option>Commercial space</option>
           </select>
         </div>
-        <div class="ballpark" id="ballpark" style="display:none"></div>
+        
       </section>
 
       <!-- step 2 -->
@@ -172,17 +172,6 @@
               <option>Just planning / budgeting</option>
             </select>
           </div>
-        </div>
-        <div class="field">
-          <label>Budget range</label>
-          <select id="budget">
-            <option>Not sure yet</option>
-            <option>Under $2,500</option>
-            <option>$2,500 – $5,000</option>
-            <option>$5,000 – $10,000</option>
-            <option>$10,000 – $25,000</option>
-            <option>$25,000+</option>
-          </select>
         </div>
       </section>
 
@@ -312,24 +301,8 @@
       state.services.push(name);
       b.classList.add('on');
     }
-    drawBallpark();
-  });
-
-  function drawBallpark() {
-    const el = $('#ballpark');
-    if (!state.services.length) { el.style.display = 'none'; return; }
-    let lo = 0, hi = 0;
-    state.services.forEach((s) => {
-      const r = RANGE[s];
-      if (r) { lo += r[0]; hi += r[1]; }
     });
-    if (!lo) { el.style.display = 'none'; return; }
-    el.style.display = 'block';
-    el.innerHTML = '<div class="eyebrow gold" style="margin-bottom:6px">Typical Valley range</div>' +
-      '<b>' + QB.money(lo) + ' – ' + QB.money(hi) + '</b>' +
-      '<small>Based on similar ' + state.services.join(' + ').toLowerCase() + ' jobs. Your written estimate replaces this number, and photos are what make it accurate.</small>';
-  }
-  drawBallpark();
+
 
   /* ---------- navigation ---------- */
   function setStep(n) {
@@ -429,7 +402,7 @@
       property_type: $('#propType').value,
       rooms: ($('#rooms').value.trim() || '') + ($('#sqft').value ? ' · ~' + $('#sqft').value + ' sq ft' : ''),
       timeline: $('#timeline').value,
-      budget: $('#budget').value,
+      budget: '',
       notes: $('#notes').value.trim(),
       source: 'Photo quote form'
     };

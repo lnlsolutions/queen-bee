@@ -119,21 +119,11 @@ window.QB = (function () {
 
   /* ---------- Bee chat ---------- */
   const PRICE = {
-    'interior painting': 'Interior painting in the Valley usually lands between $2,300 and $8,200 depending on square footage, ceiling height and how much prep the walls need. Most single-family homes we do are $3,400–$5,600.',
-    'exterior painting': 'Exterior painting runs $1,900–$7,600, with most Phoenix-area homes at $3,200–$4,800 including pressure wash, stucco patching and two coats of elastomeric.',
-    'cabinet refinishing': 'Cabinet painting is $1,400–$5,700 per kitchen, and most of ours sit around $2,600–$3,400 with doors sprayed off-site and new hardware.',
-    'kitchen remodel': 'Kitchen remodels start around $18,000 for a cosmetic refresh and climb from there. I would rather see photos before I put a number on it.',
-    'bathroom remodel': 'Bathroom remodels typically start near $12,000 for a full tear-out with new tile, vanity and fixtures.',
-    'drywall and texture': 'Drywall repair and texture matching is usually $350–$1,800 depending on how much is damaged.',
-    default: 'Every job is priced from the actual walls, so I do not guess. Send three photos through the quote form and you will get a real number, usually same day.',
+    default: 'Every job is quoted from the actual walkthrough, so I do not put numbers on a website. Send photos and we will walk it, then you get a written quote for your exact scope.',
   };
 
-  function priceFor(services) {
-    const list = Array.isArray(services) ? services : [services];
-    const hits = list.map((s) => String(s || '').toLowerCase());
-    for (const k of Object.keys(PRICE)) {
-      if (k !== 'default' && hits.some((h) => h.includes(k.split(' ')[0]))) return PRICE[k];
-    }
+
+  function priceFor() {
     return PRICE.default;
   }
 
@@ -323,8 +313,8 @@ window.QB = (function () {
           : /bath/.test(t) ? 'bathroom remodel'
           : /drywall|texture|patch/.test(t) ? 'drywall and texture'
           : /interior|inside|room/.test(t) ? 'interior painting' : null;
-        await bot(svc ? priceFor(svc) : 'Painting is priced by the room and the prep, not by the hour. As a guide: interior $2,300–$8,200, exterior $1,900–$7,600, cabinets $1,400–$5,700 per kitchen, and remodels from $12,000.');
-        await bot('If you tell me what you are doing, I can narrow that down. Or send three photos and skip the guessing.', 480);
+        await bot(svc ? priceFor(svc) : 'Painting is priced by the room and the prep, not by the hour, and I will not guess at a number. Every quote comes from a walkthrough so the scope is exact. Start with photos and we will get you on the schedule.');
+        await bot('Tell me what you are doing and I will get you on the walkthrough schedule. That is where the real number comes from, and it is free.', 480);
         setQuick(['Interior painting', 'Exterior painting', 'Cabinet refinishing', 'Kitchen remodel']);
         return;
       }
