@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Queen Bee's · CRM Portal</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/img/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/qb.css">
+<style>
+body{background:#F5F3F1}
+.gate{position:fixed;inset:0;z-index:300;background:var(--ink);display:grid;place-items:center;padding:20px}
+.gate-card{background:#fff;border-radius:20px;padding:34px;width:100%;max-width:400px;box-shadow:var(--shadow-lg);text-align:center}
+.gate-card img{width:56px;margin:0 auto 14px}
+.gate-card h1{font-size:24px;margin-bottom:6px}
+.gate-card p{font-size:13.5px;color:var(--muted);margin-bottom:20px}
+.gate-card input{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:13px 15px;font-size:15px;font-family:inherit;text-align:center;letter-spacing:.2em;font-weight:700;margin-bottom:12px;outline:none}
+.gate-card input:focus{border-color:var(--pink)}
+.gate-err{color:#C4164F;font-size:12.5px;margin-top:10px;display:none}
+
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+.side{background:var(--ink);color:#fff;padding:20px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.side .brand{display:flex;gap:10px;align-items:center;padding:6px 8px 18px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:12px}
+.side .brand img{width:34px}
+.side .brand-name{font-family:var(--display);font-size:15px;color:#fff;line-height:1.1}
+.side .brand-sub{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+.navi{display:flex;flex-direction:column;gap:3px;overflow-y:auto;flex:1}
+.navi button{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.7);text-align:left;transition:.14s}
+.navi button:hover{background:rgba(255,255,255,.07);color:#fff}
+.navi button.on{background:var(--pink);color:#fff}
+.navi button .n{margin-left:auto;background:rgba(255,255,255,.14);border-radius:999px;padding:1px 7px;font-size:11px;font-weight:800}
+.navi button.on .n{background:rgba(0,0,0,.22)}
+.side-foot{font-size:11px;color:rgba(255,255,255,.4);padding:10px 8px 0;border-top:1px solid rgba(255,255,255,.1)}
+
+.main{min-width:0}
+.top{background:#fff;border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:30}
+.top h1{font-size:20px;font-family:var(--display)}
+.top .sub{font-size:12px;color:var(--muted);margin-top:1px}
+.top .spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:999px;padding:8px 14px;background:var(--smoke);min-width:220px}
+.search input{border:0;background:none;outline:none;font-family:inherit;font-size:13.5px;width:100%}
+.content{padding:24px 26px 60px}
+.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 15px}
+.kpi .lab{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+.kpi .val{font-family:var(--display);font-size:25px;margin:5px 0 2px;line-height:1}
+.kpi .sub{font-size:11.5px;color:var(--muted)}
+.kpi.pink{background:linear-gradient(160deg,#FFF3F8,#fff);border-color:#F8D9E6}
+.kpi.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+.kpi.dark .lab{color:var(--gold)}
+.kpi.dark .sub{color:rgba(255,255,255,.55)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:18px}
+.panel-head{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line)}
+.panel-head h2{font-size:16px;font-family:var(--display)}
+.panel-head .spacer{flex:1}
+.panel-body{padding:0}
+.panel-body.pad{padding:18px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:800;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:#FCFBFB}
+td{padding:12px 14px;border-bottom:1px solid #F1EEEC;font-size:13.5px;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#FDFAFC;cursor:pointer}
+.num{text-align:right}
+.who{display:flex;align-items:center;gap:10px}
+.av{width:32px;height:32px;border-radius:50%;background:var(--pink-soft);color:var(--pink-deep);display:grid;place-items:center;font-size:11.5px;font-weight:800;flex:none}
+.who b{display:block;font-size:13.5px}
+.who small{font-size:11.5px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;letter-spacing:.03em;white-space:nowrap}
+.pill.new{background:#EAF1FF;color:#1F4FA8}
+.pill.contacted{background:#FFF4E0;color:#95661A}
+.pill.walkthrough{background:#F3EBFF;color:#6435B5}
+.pill.quote{background:#FFEAF3;color:#B01560}
+.pill.won{background:#E6F7EE;color:#12694A}
+.pill.lost{background:#F2F0EF;color:#7A7370}
+.pill.photos{background:#F2F7F6;color:#2B6C63}
+.empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:14px}
+.kan{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;align-items:start}
+.kan-col{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;min-height:120px}
+.kan-col h4{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;display:flex;justify-content:space-between}
+.kan-card{background:var(--smoke);border:1px solid #EDE9E6;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer}
+.kan-card:hover{border-color:var(--pink)}
+.kan-card b{font-size:12.5px;display:block;margin-bottom:2px}
+.kan-card small{font-size:11px;color:var(--muted);display:block;margin-bottom:6px}
+.kan-card .moves{display:flex;gap:4px}
+.kan-card .moves button{font-size:10px;font-weight:800;border:1px solid var(--line);background:#fff;border-radius:6px;padding:2px 6px;color:var(--muted)}
+.kan-card .moves button:hover{border-color:var(--pink);color:var(--pink-deep)}
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar-row{display:grid;grid-template-columns:130px 1fr 52px;gap:10px;align-items:center;font-size:12.5px}
+.bar{height:9px;border-radius:999px;background:#F1EDEB;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--pink),var(--gold))}
+.bar-row b{text-align:right;font-size:12px}
+.grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+.photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ph{border-radius:12px;overflow:hidden;position:relative;background:var(--ink);aspect-ratio:4/3;cursor:zoom-in}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ph span{position:absolute;left:0;right:0;bottom:0;padding:14px 8px 6px;background:linear-gradient(transparent,rgba(10,10,11,.8));color:#fff;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,10,11,.42);z-index:100;opacity:0;pointer-events:none;transition:.2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:#fff;z-index:110;transform:translateX(100%);transition:transform .24s ease;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dr-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px}
+.dr-head h3{font-family:var(--display);font-size:21px;line-height:1.15}
+.dr-head small{font-size:12px;color:var(--muted)}
+.dr-head .x{margin-left:auto;font-size:24px;color:var(--muted);line-height:1}
+.dr-body{flex:1;overflow-y:auto;padding:18px 20px 26px}
+.dr-sec{margin-bottom:20px}
+.dr-sec h5{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;font-weight:800}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.kv div{font-size:13px}
+.kv b{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:2px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.acts button,.acts a{font-size:12.5px;font-weight:800;border:1.5px solid var(--line);border-radius:9px;padding:8px 12px;background:#fff;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.acts button:hover,.acts a:hover{border-color:var(--pink);color:var(--pink-deep)}
+.acts .primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.acts .primary:hover{background:var(--pink);border-color:var(--pink);color:#fff}
+.trail{list-style:none;font-size:12.5px}
+.trail li{position:relative;padding:0 0 12px 16px;border-left:2px solid #F1EDEB;color:var(--text)}
+.trail li:last-child{border-left-color:transparent;padding-bottom:0}
+.trail li:before{content:"";position:absolute;left:-5px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.trail time{display:block;font-size:10.5px;color:var(--muted);margin-top:2px}
+.lightbox{position:fixed;inset:0;background:rgba(10,10,11,.92);z-index:200;display:none;place-items:center;padding:24px}
+.lightbox.on{display:grid}
+.lightbox img{max-width:100%;max-height:90vh;border-radius:12px}
+.lightbox button{position:absolute;top:18px;right:22px;color:#fff;font-size:30px}
+.modal{position:fixed;inset:0;background:rgba(10,10,11,.5);z-index:150;display:none;place-items:center;padding:20px}
+.modal.on{display:grid}
+.modal-card{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px}
+.modal-card h3{font-family:var(--display);font-size:20px;margin-bottom:14px}
+.modal-card label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--muted);margin-bottom:5px}
+.modal-card input,.modal-card textarea,.modal-card select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;font-family:inherit;font-size:14px;margin-bottom:12px;outline:none}
+.modal-card input:focus,.modal-card textarea:focus{border-color:var(--pink)}
+.modal-acts{display:flex;gap:9px;justify-content:flex-end;margin-top:6px}
+@media(max-width:1200px){.cards{grid-template-columns:repeat(3,1fr)}.kan{grid-template-columns:repeat(3,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+@media(max-width:860px){.shell{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;overflow-x:auto;gap:10px;padding:12px}.side .brand{border:0;padding:0;margin:0}.navi{flex-direction:row}.side-foot{display:none}.cards{grid-template-columns:1fr 1fr}.kan{grid-template-columns:1fr}.photo-grid{grid-template-columns:1fr 1fr}.content{padding:16px}.search{display:none}}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">
+  <form class="gate-card" id="gateForm">
+    <img src="assets/img/logo.svg" alt="">
+    <h1>Queen Bee's CRM</h1>
+    <p>Enter the team passcode to open the portal.</p>
+    <input id="gateCode" type="password" placeholder="••••••" autocomplete="off">
+    <button class="btn btn-pink btn-block" type="submit">Open portal</button>
+    <div class="gate-err" id="gateErr">That passcode is not right.</div>
+  </form>
+</div>
+
+<div class="shell" style="display:none" id="shell">
+  <aside class="side">
+    <div class="brand">
+      <img src="assets/img/logo.svg" alt="">
+      <div><div class="brand-name">Queen Bee's</div><div class="brand-sub">CRM</div></div>
+    </div>
+    <nav class="navi" id="navi">
+      <button data-tab="dash" class="on">Dashboard <span class="n" id="nDash">0</span></button>
+      <button data-tab="requests">Requests <span class="n" id="nReq">0</span></button>
+      <button data-tab="pipeline">Pipeline</button>
+      <button data-tab="followups">Follow-ups <span class="n" id="nDue">0</span></button>
+      <button data-tab="reviews">Reviews <span class="n" id="nRev">0</span></button>
+      <button data-tab="projects">Projects</button>
+      <button data-tab="schedule">Schedule</button>
+      <button data-tab="photos">Photos</button>
+      <button data-tab="messages">Messages</button>
+      <button data-tab="analytics">Analytics</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+    <div class="side-foot">Live data · Queen Bee's Painting &amp; Remodeling</div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div>
+        <h1 id="tabTitle">Dashboard</h1>
+        <div class="sub" id="tabSub">Everything that came in from the website</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8489" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" placeholder="Search name, ref, city…">
+      </div>
+      <button class="btn btn-outline btn-sm" id="refreshBtn">Refresh</button>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="lightbox" id="lightbox"><button>&times;</button><img alt=""></div>
+<div class="modal" id="modal"><div class="modal-card" id="modalCard"></div></div>
+
+<script src="assets/js/qb.js"></script>
+<script>
+(function () {
+  const $ = QB.$, $$ = QB.$$;
+  const KEY = 'qb_portal_ok';
+  const state = { leads: [], tab: 'dash', q: '', current: null, photos: {}, reviews: null };
+
+  const STATUSES = ['New request', 'Contacted', 'Walkthrough set', 'Quote sent', 'Won', 'Lost'];
+  const STAGES = [
+    ['new', 'New'], ['contacted', 'Contacted'], ['walkthrough', 'Walkthrough'],
+    ['quote', 'Quote sent'], ['won', 'Won'], ['lost', 'Lost']
+  ];
+  const stageOf = (s) => {
+    const v = (s || '').toLowerCase();
+    if (v.includes('won')) return 'won';
+    if (v.includes('lost')) return 'lost';
+    if (v.includes('quote')) return 'quote';
+    if (v.includes('walk')) return 'walkthrough';
+    if (v.includes('contact')) return 'contacted';
+    return 'new';
+  };
+  const pillClass = (s) => stageOf(s) === 'walkthrough' ? 'walkthrough' : stageOf(s);
+
+  /* ---------- gate ---------- */
+  function openPortal() {
+    $('#gate').style.display = 'none';
+    $('#shell').style.display = 'grid';
+    load();
+  }
+  if (sessionStorage.getItem(KEY) === '1') openPortal();
+  $('#gateForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = $('#gateCode').value.trim().toLowerCase();
+    if (code === 'qb2026' || code === QB.CONFIG.PORTAL_KEY) {
+      sessionStorage.setItem(KEY, '1');
+      openPortal();
+    } else {
+      $('#gateErr').style.display = 'block';
+      $('#gateCode').value = '';
+    }
+  });
+
+  /* ---------- data ---------- */
+  async function load() {
+    $('#content').innerHTML = '<div class="empty">Loading the hive…</div>';
+    try {
+      const r = await QB.api('list', { limit: 300 });
+      state.leads = (r.leads || []).map(normalize);
+      state.photos = {};
+      render();
+    } catch (e) {
+      $('#content').innerHTML = '<div class="empty">Could not reach the server. Check the connection and hit Refresh.<br><small style="color:#B3AEB4">' + QB.esc(e.message) + '</small></div>';
+    }
+  }
+  function normalize(l) {
+    let log = [];
+    try { log = JSON.parse(l.log || '[]'); } catch (e) { log = []; }
+    if (!Array.isArray(log)) log = [];
+    return Object.assign({}, l, {
+      _log: log,
+      _services: Array.isArray(l.services) ? l.services : [],
+      _photos: Number(l.photo_count) || 0
+    });
+  }
+
+  async function patch(id, data, msg) {
+    try {
+      const r = await QB.api('update', { id, patch: data });
+      if (!r.ok) throw new Error(r.error || 'failed');
+      const i = state.leads.findIndex((l) => l.id === id);
+      if (i > -1) state.leads[i] = normalize(r.lead);
+      QB.toast(msg || 'Saved');
+      render();
+      if (state.current === id) openLead(id);
+      return true;
+    } catch (e) {
+      QB.toast('Could not save: ' + e.message);
+      return false;
+    }
+  }
+
+  function addTrail(lead, kind, text) {
+    const log = lead._log.slice();
+    log.unshift({ at: new Date().toISOString(), kind, text });
+    return JSON.stringify(log.slice(0, 60));
+  }
+
+  /* ---------- chrome ---------- */
+  const TITLES = {
+    dash: ['Dashboard', 'Everything that came in from the website'],
+    requests: ['Requests', 'Every quote request, newest first'],
+    pipeline: ['Pipeline', 'Move a job through the stages'],
+    followups: ['Follow-ups', 'Automated texts and touches that are due now'],
+    reviews: ['Reviews', 'Request, collect and publish homeowner reviews'],
+    projects: ['Projects', 'Won work in progress'],
+    schedule: ['Schedule', 'Walkthroughs and site visits'],
+    photos: ['Photos', 'Every photo a homeowner has sent'],
+    messages: ['Messages', 'Chat and text threads'],
+    analytics: ['Analytics', 'Where the work comes from'],
+    settings: ['Settings', 'Portal and business details']
+  };
+  $('#navi').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    state.tab = b.dataset.tab;
+    $$('#navi button').forEach((x) => x.classList.toggle('on', x === b));
+    $('#tabTitle').textContent = TITLES[state.tab][0];
+    $('#tabSub').textContent = TITLES[state.tab][1];
+    render();
+  });
+  $('#refreshBtn').addEventListener('click', load);
+  $('#q').addEventListener('input', (e) => { state.q = e.target.value.toLowerCase(); render(); });
+
+  const filtered = () => {
+    if (!state.q) return state.leads;
+    return state.leads.filter((l) =>
+      [l.name, l.ref, l.city, l.phone, l.email, (l._services || []).join(' ')]
+        .join(' ').toLowerCase().includes(state.q));
+  };
+
+  function counts() {
+    const l = state.leads;
+    const open = l.filter((x) => !['won', 'lost'].includes(stageOf(x.status)));
+    return {
+      total: l.length,
+      newReq: l.filter((x) => stageOf(x.status) === 'new').length,
+      open: open.length,
+      quotes: l.filter((x) => stageOf(x.status) === 'quote').length,
+      won: l.filter((x) => stageOf(x.status) === 'won').length,
+      pipeline: l.filter((x) => stageOf(x.status) === 'quote').reduce((s, x) => s + (Number(x.estimate) || 0), 0),
+      wonValue: l.filter((x) => stageOf(x.status) === 'won').reduce((s, x) => s + (Number(x.value) || Number(x.estimate) || 0), 0),
+      photos: l.reduce((s, x) => s + x._photos, 0)
+    };
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    const c = counts();
+    $('#nDash').textContent = c.open;
+    $('#nReq').textContent = c.total;
+    const dueNow = followupQueue().filter((q) => q.due);
+    $('#nDue').textContent = dueNow.length;
+    $('#nRev').textContent = state.reviews ? state.reviews.length : 0;
+    const el = $('#content');
+    if (!state.leads.length) {
+      el.innerHTML = '<div class="panel"><div class="empty">No requests yet. When someone submits the quote form on the website, or asks Bee for an estimate, it lands here.</div></div>';
+      return;
+    }
+    if (state.tab === 'dash') return renderDash(el, c);
+    if (state.tab === 'requests') return renderRequests(el);
+    if (state.tab === 'pipeline') return renderPipeline(el);
+    if (state.tab === 'followups') return renderFollowups(el);
+    if (state.tab === 'reviews') return renderReviews(el);
+    if (state.tab === 'projects') return renderProjects(el);
+    if (state.tab === 'schedule') return renderSchedule(el);
+    if (state.tab === 'photos') return renderPhotos(el);
+    if (state.tab === 'messages') return renderMessages(el);
+    if (state.tab === 'analytics') return renderAnalytics(el);
+    if (state.tab === 'settings') return renderSettings(el);
+  }
+
+  function kpiCards(c) {
+    return '<div class="cards">' +
+      '<div class="kpi dark"><div class="lab">Open requests</div><div class="val">' + c.open + '</div><div class="sub">' + c.newReq + ' brand new</div></div>' +
+      '<div class="kpi pink"><div class="lab">Quotes out</div><div class="val">' + c.quotes + '</div><div class="sub">awaiting answer</div></div>' +
+      '<div class="kpi"><div class="lab">Pipeline</div><div class="val">' + QB.money(c.pipeline) + '</div><div class="sub">quoted, not won</div></div>' +
+      '<div class="kpi"><div class="lab">Won</div><div class="val">' + c.won + '</div><div class="sub">' + QB.money(c.wonValue) + ' booked</div></div>' +
+      '<div class="kpi"><div class="lab">Photos in</div><div class="val">' + c.photos + '</div><div class="sub">attached to requests</div></div>' +
+      '<div class="kpi"><div class="lab">Total requests</div><div class="val">' + c.total + '</div><div class="sub">all time</div></div>' +
+      '</div>';
+  }
+
+  function renderDash(el, c) {
+    const rows = filtered().slice(0, 8);
+    const upcoming = state.leads.filter((l) => l.walkthrough_at).sort((a, b) => a.walkthrough_at.localeCompare(b.walkthrough_at)).slice(0, 4);
+    const bySvc = tally(state.leads.flatMap((l) => l._services));
+    el.innerHTML = kpiCards(c) +
+      '<div class="grid2">' +
+        '<div class="panel"><div class="panel-head"><h2>Latest requests</h2><div class="spacer"></div><span class="pill quote">' + rows.length + ' shown</span></div>' +
+          '<div class="panel-body"><table><thead><tr><th>Client</th><th>Work</th><th>Photos</th><th>Received</th><th>Status</th></tr></thead><tbody>' +
+          rows.map(rowHTML).join('') + '</tbody></table></div></div>' +
+        '<div>' +
+          '<div class="panel"><div class="panel-head"><h2>Walkthroughs</h2></div><div class="panel-body pad">' +
+            (upcoming.length ? upcoming.map((l) => '<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #F3F0EE"><div style="font-size:12px;font-weight:800;color:var(--pink-deep);min-width:74px">' + QB.esc(QB.fmtDateTime(l.walkthrough_at)) + '</div><div style="font-size:13px"><b>' + QB.esc(l.name) + '</b><div style="color:var(--muted);font-size:11.5px">' + QB.esc(l.city || '') + ' · ' + QB.esc((l._services || [])[0] || '') + '</div></div></div>').join('') : '<div style="color:var(--muted);font-size:13px">Nothing scheduled yet. Open a request and set a walkthrough.</div>') +
+          '</div></div>' +
+          '<div class="panel"><div class="panel-head"><h2>What people want</h2></div><div class="panel-body pad"><div class="bars">' +
+            barsHTML(bySvc, 5) + '</div></div></div>' +
+        '</div>' +
+      '</div>';
+    bindRows();
+  }
+
+  function tally(list) {
+    const m = {};
+    list.forEach((k) => { if (!k) return; m[k] = (m[k] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }
+  function barsHTML(entries, limit) {
+    const max = Math.max(1, ...entries.map((e) => e[1]));
+    return entries.slice(0, limit || 6).map(([k, v]) =>
+      '<div class="bar-row"><span>' + QB.esc(k) + '</span><div class="bar"><i style="width:' + Math.round((v / max) * 100) + '%"></i></div><b>' + v + '</b></div>'
+    ).join('') || '<div style="color:var(--muted);font-size:13px">No data yet.</div>';
+  }
+
+  function rowHTML(l) {
+    return '<tr data-id="' + l.id + '"><td><div class="who"><div class="av">' + QB.initials(l.name) + '</div><div><b>' + QB.esc(l.name) + '</b><small>' + QB.esc(l.city || l.zip || '') + ' · ' + QB.esc(l.ref || '') + '</small></div></div></td>' +
+      '<td>' + QB.esc((l._services || []).slice(0, 2).join(', ') || '—') + '</td>' +
+      '<td>' + (l._photos ? '<span class="pill photos">' + l._photos + ' 📷</span>' : '<span style="color:#C9C3C7">—</span>') + '</td>' +
+      '<td>' + QB.esc(QB.ago(l.created_date)) + '</td>' +
+      '<td><span class="pill ' + pillClass(l.status) + '">' + QB.esc(l.status || 'New request') + '</span></td></tr>';
+  }
+
+  function bindRows() {
+    $$('tbody tr[data-id]').forEach((tr) => tr.addEventListener('click', () => openLead(tr.dataset.id)));
+    $$('.kan-card').forEach((k) => k.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      openLead(k.dataset.id);
+    }));
+  }
+
+  function renderRequests(el) {
+    const rows = filtered();
+    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>All requests</h2><div class="spacer"></div>' +
+      '<select id="statusFilter" style="border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;font-family:inherit;font-size:12.5px;font-weight:700"><option value="">All statuses</option>' +
+      STATUSES.map((s) => '<option>' + s + '</option>').join('') + '</select></div>' +
+      '<div class="panel-body"><table><thead><tr><th>Client</th><th>Work</th><th>City</th><th>Photos</th><th>Received</th><th>Status</th></tr></thead><tbody>' +
+      rows.map(rowHTML).join('') + '</tbody></table></div></div>';
+    bindRows();
+    $('#statusFilter').addEventListener('change', (e) => {
+      const v = e.target.value;
+      const sub = v ? filtered().filter((l) => (l.status || '') === v) : filtered();
+      $$('tbody')[0].innerHTML = sub.map(rowHTML).join('') || '<tr><td colspan="6" class="empty">Nothing with that status.</td></tr>';
+      bindRows();
+    });
+  }
+
+  function renderPipeline(el) {
+    el.innerHTML = '<div class="kan">' + STAGES.map(([key, label]) => {
+      const items = filtered().filter((l) => stageOf(l.status) === key);
+      return '<div class="kan-col"><h4><span>' + label + '</span><span>' + items.length + '</span></h4>' +
+        items.map((l) => {
+          const next = STAGES[STAGES.findIndex((s) => s[0] === key) + 1];
+          return '<div class="kan-card" data-id="' + l.id + '"><b>' + QB.esc(l.name) + '</b><small>' + QB.esc(l.city || '') + ' · ' + QB.esc((l._services || [])[0] || '') + '</small>' +
+            '<div class="moves">' + (next ? '<button data-move="' + l.id + '" data-stage="' + next[1] + '">→ ' + next[1] + '</button>' : '') +
+            '<button data-move="' + l.id + '" data-stage="Lost">Lost</button></div></div>';
+        }).join('') + '</div>';
+    }).join('') + '</div>';
+    bindRows();
+    $$('button[data-move]').forEach((b) => b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = b.dataset.move, stage = b.dataset.stage;
+      const lead = state.leads.find((l) => l.id === id);
+      if (!lead) return;
+      await patch(id, { status: stage, stage: stageOf(stage), log: addTrail(lead, 'stage', 'Moved to ' + stage) }, lead.name + ' → ' + stage);
+    }));
+  }
+
+  function renderProjects(el) {
+    const won = filtered().filter((l) => stageOf(l.status) === 'won');
+    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Active projects</h2><div class="spacer"></div><span class="pill won">' + won.length + ' won</span></div>' +
+      '<div class="panel-body">' + (won.length ? '<table><thead><tr><th>Project</th><th>Work</th><th>Value</th><th>Scheduled</th><th>Owner</th></tr></thead><tbody>' +
+        won.map((l) => '<tr data-id="' + l.id + '"><td><div class="who"><div class="av">' + QB.initials(l.name) + '</div><div><b>' + QB.esc(l.name) + '</b><small>' + QB.esc(l.address || l.city || '') + '</small></div></div></td>' +
+          '<td>' + QB.esc((l._services || []).join(', ')) + '</td><td class="num">' + QB.money(l.value || l.estimate || 0) + '</td><td>' + QB.esc(l.walkthrough_at ? QB.fmtDateTime(l.walkthrough_at) : 'TBD') + '</td><td>' + QB.esc(l.assigned || 'Kelsey') + '</td></tr>').join('') +
+        '</tbody></table>' : '<div class="empty">No won jobs yet. Move a request to Won from the pipeline and it shows up here.</div>') + '</div></div>';
+    bindRows();
+  }
+
+  function renderSchedule(el) {
+    const withDate = filtered().filter((l) => l.walkthrough_at).sort((a, b) => a.walkthrough_at.localeCompare(b.walkthrough_at));
+    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Walkthrough calendar</h2></div><div class="panel-body">' +
+      (withDate.length ? '<table><thead><tr><th>When</th><th>Client</th><th>Address</th><th>Work</th><th>Status</th></tr></thead><tbody>' +
+        withDate.map((l) => '<tr data-id="' + l.id + '"><td><b>' + QB.esc(QB.fmtDateTime(l.walkthrough_at)) + '</b></td><td>' + QB.esc(l.name) + '<div style="font-size:11.5px;color:var(--muted)">' + QB.esc(l.phone || '') + '</div></td><td>' + QB.esc(l.address || '') + '<div style="font-size:11.5px;color:var(--muted)">' + QB.esc(l.city || '') + '</div></td><td>' + QB.esc((l._services || []).join(', ')) + '</td><td><span class="pill ' + pillClass(l.status) + '">' + QB.esc(l.status) + '</span></td></tr>').join('') +
+        '</tbody></table>' : '<div class="empty">Nothing on the calendar. Open a request and choose Schedule walkthrough.</div>') + '</div></div>';
+    bindRows();
+  }
+
+  async function renderPhotos(el) {
+    const withPhotos = filtered().filter((l) => l._photos > 0);
+    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Photos from homeowners</h2><div class="spacer"></div><span class="pill photos">' + withPhotos.reduce((s, l) => s + l._photos, 0) + ' photos</span></div><div class="panel-body pad" id="photoBody">' +
+      (withPhotos.length ? '<div class="empty">Loading photos…</div>' : '<div class="empty">No photos yet. They appear here the moment a quote request with images comes in.</div>') + '</div></div>';
+    if (!withPhotos.length) return;
+    const body = $('#photoBody');
+    let html = '';
+    for (const l of withPhotos) {
+      const photos = await getPhotos(l.ref);
+      html += '<div style="margin-bottom:20px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><b style="font-size:14px">' + QB.esc(l.name) + '</b><span style="font-size:12px;color:var(--muted)">' + QB.esc(l.ref) + ' · ' + QB.esc(l.city || '') + '</span><button class="btn btn-outline btn-sm" style="margin-left:auto" data-open="' + l.id + '">Open request</button></div>' +
+        '<div class="photo-grid">' + photos.map((p) => '<div class="ph" data-src="' + p.data + '"><img src="' + p.data + '" alt=""><span>' + QB.esc(p.name) + '</span></div>').join('') + '</div></div>';
+    }
+    body.innerHTML = html || '<div class="empty">Photos could not be loaded.</div>';
+    $$('.ph').forEach((p) => p.addEventListener('click', () => {
+      $('#lightbox img').src = p.dataset.src;
+      $('#lightbox').classList.add('on');
+    }));
+    $$('button[data-open]').forEach((b) => b.addEventListener('click', () => openLead(b.dataset.open)));
+  }
+
+  async function getPhotos(ref) {
+    if (state.photos[ref]) return state.photos[ref];
+    try {
+      const r = await QB.api('photos', { ref });
+      state.photos[ref] = r.photos || [];
+    } catch (e) {
+      state.photos[ref] = [];
+    }
+    return state.photos[ref];
+  }
+
+  function renderMessages(el) {
+    const withChat = filtered().filter((l) => (l.chat || '').trim());
+    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Conversations</h2><div class="spacer"></div><span class="pill new">' + withChat.length + ' threads</span></div><div class="panel-body">' +
+      (withChat.length ? withChat.map((l) => {
+        const lines = (l.chat || '').split('\n').filter(Boolean).slice(-6);
+        return '<div style="padding:14px 18px;border-bottom:1px solid #F3F0EE;cursor:pointer" data-id="' + l.id + '">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="av">' + QB.initials(l.name) + '</div><div><b style="font-size:13.5px">' + QB.esc(l.name) + '</b><div style="font-size:11.5px;color:var(--muted)">' + QB.esc(l.phone || '') + ' · ' + QB.esc(l.source || '') + ' · ' + QB.esc(QB.ago(l.created_date)) + '</div></div><span class="pill ' + pillClass(l.status) + '" style="margin-left:auto">' + QB.esc(l.status) + '</span></div>' +
+          '<div style="background:var(--smoke);border-radius:11px;padding:11px 13px;font-size:12.5px;color:#4A4448;white-space:pre-wrap;line-height:1.55">' + QB.esc(lines.join('\n')) + '</div></div>';
+      }).join('') : '<div class="empty">No chat transcripts yet. Bee saves every conversation with the request.</div>') + '</div></div>';
+    bindRows();
+  }
+
+  function renderAnalytics(el) {
+    const l = state.leads;
+    const bySvc = tally(l.flatMap((x) => x._services));
+    const byCity = tally(l.map((x) => x.city));
+    const bySource = tally(l.map((x) => x.source));
+    const won = l.filter((x) => stageOf(x.status) === 'won').length;
+    const conv = l.length ? Math.round((won / l.length) * 100) : 0;
+    const avg = l.filter((x) => Number(x.estimate) > 0);
+    const avgTicket = avg.length ? avg.reduce((s, x) => s + Number(x.estimate), 0) / avg.length : 0;
+    el.innerHTML = '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+      '<div class="kpi"><div class="lab">Requests</div><div class="val">' + l.length + '</div><div class="sub">all time</div></div>' +
+      '<div class="kpi"><div class="lab">Close rate</div><div class="val">' + conv + '%</div><div class="sub">' + won + ' won</div></div>' +
+      '<div class="kpi"><div class="lab">Avg quoted</div><div class="val">' + QB.money(avgTicket) + '</div><div class="sub">' + avg.length + ' quotes</div></div>' +
+      '<div class="kpi"><div class="lab">Photos per request</div><div class="val">' + (l.length ? (l.reduce((s, x) => s + x._photos, 0) / l.length).toFixed(1) : '0') + '</div><div class="sub">photo quote rate</div></div>' +
+      '</div>' +
+      '<div class="grid3">' +
+        '<div class="panel"><div class="panel-head"><h2>By service</h2></div><div class="panel-body pad"><div class="bars">' + barsHTML(bySvc, 6) + '</div></div></div>' +
+        '<div class="panel"><div class="panel-head"><h2>By city</h2></div><div class="panel-body pad"><div class="bars">' + barsHTML(byCity, 6) + '</div></div></div>' +
+        '<div class="panel"><div class="panel-head"><h2>By source</h2></div><div class="panel-body pad"><div class="bars">' + barsHTML(bySource, 6) + '</div></div></div>' +
+      '</div>';
+  }
+
+  function renderSettings(el) {
+    el.innerHTML = '<div class="grid2"><div class="panel"><div class="panel-head"><h2>Portal</h2></div><div class="panel-body pad">' +
+      '<div class="kv"><div><b>Passcode</b>qb2026</div><div><b>Data store</b>Encrypted app database</div><div><b>Photo storage</b>Chunked records, reassembled on read</div><div><b>Endpoint</b><span style="font-size:11px;word-break:break-all">' + QB.esc(QB.CONFIG.API) + '</span></div></div>' +
+      '<div class="acts" style="margin-top:16px"><button class="primary" id="exportBtn">Export requests CSV</button><button id="signOut">Sign out</button></div>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h2>Business details on the website</h2></div><div class="panel-body pad">' +
+      '<div class="kv"><div><b>Phone</b>' + QB.esc(QB.CONFIG.PHONE) + '</div><div><b>Email</b>' + QB.esc(QB.CONFIG.EMAIL) + '</div><div><b>Hours</b>' + QB.esc(QB.CONFIG.HOURS) + '</div><div><b>Service area</b>' + QB.esc(QB.CONFIG.AREAS.join(', ')) + '</div></div>' +
+      '<p style="font-size:12.5px;color:var(--muted);margin-top:14px;line-height:1.55">These live in <b>assets/js/qb.js</b> at the top of the file. Change the phone, email or city list there once and it updates the site, the quote form and this portal.</p>' +
+      '</div></div></div>';
+    $('#exportBtn').addEventListener('click', exportCSV);
+    $('#signOut').addEventListener('click', () => { sessionStorage.removeItem(KEY); location.reload(); });
+  }
+
+  function exportCSV() {
+    const cols = ['ref', 'created_date', 'name', 'phone', 'email', 'address', 'city', 'zip', 'services', 'property_type', 'rooms', 'timeline', 'budget', 'status', 'estimate', 'value', 'walkthrough_at', 'notes'];
+    const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const rows = [cols.join(',')].concat(state.leads.map((l) => cols.map((c) => esc(c === 'services' ? (l._services || []).join('; ') : l[c])).join(',')));
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'queen-bee-requests-' + QB.todayISO() + '.csv';
+    a.click();
+    QB.toast('CSV downloaded');
+  }
+
+
+  /* ---------- follow-up engine ---------- */
+  const SEQ = [
+    { stage: 0, after: 0, label: 'Request received', msg: (l) => 'Hi ' + first(l.name) + ", it's Queen Bee's. Got your " + svc(l) + ' request' + (l._photos ? ' and ' + l._photos + ' photo' + (l._photos > 1 ? 's' : '') : '') + '. We are pricing it today. Anything else we should see?' },
+    { stage: 1, after: 2, label: 'Day 2 nudge', msg: (l) => 'Hi ' + first(l.name) + ', following up on the ' + svc(l) + ' quote. Want me to hold a walkthrough this week?' },
+    { stage: 2, after: 5, label: 'Day 5 photos', msg: (l) => first(l.name) + ', if your photos did not come through, text them to ' + QB.CONFIG.PHONE + ' and I will attach them to your file.' },
+    { stage: 3, after: 12, label: 'Day 12 last call', msg: (l) => first(l.name) + ', I am closing out your ' + svc(l) + ' request. If the timing changed, tell me and I will park it until you are ready.' }
+  ];
+  const first = (n) => String(n || '').trim().split(/\s+/)[0] || 'there';
+  const svc = (l) => ((l._services || [])[0] || 'painting').toLowerCase();
+  const daysSince = (iso) => Math.floor((Date.now() - new Date(iso || 0).getTime()) / 86400000);
+
+  function followupQueue() {
+    const out = [];
+    state.leads.forEach((l) => {
+      const st = stageOf(l.status);
+      if (st === 'lost') return;
+      if (st === 'won') {
+        if (!l.review_state) {
+          out.push({ lead: l, kind: 'review', label: 'Review request', due: daysSince(l.last_touch || l.created_date) >= 1,
+            msg: first(l.name) + ', thank you for trusting us with the ' + svc(l) + '. Would you leave a quick review? It takes a minute and it helps other homeowners find us: queenbeespainting.com/#reviews' });
+        }
+        return;
+      }
+      if (st === 'quote') {
+        const due = daysSince(l.last_touch || l.created_date) >= 3;
+        out.push({ lead: l, kind: 'quote', label: 'Quote follow-up', due,
+          msg: 'Hi ' + first(l.name) + ', checking in on the ' + QB.money(l.estimate || 0) + ' quote for your ' + svc(l) + '. Any questions before you decide?' });
+      }
+      const stage = Number(l.followup_stage) || 0;
+      const step = SEQ.find((x) => x.stage === stage);
+      if (step) {
+        out.push({ lead: l, kind: 'seq', step: stage, label: step.label, due: daysSince(l.created_date) >= step.after, msg: step.msg(l) });
+      }
+    });
+    return out.sort((a, b) => (b.due ? 1 : 0) - (a.due ? 1 : 0) || String(a.lead.name).localeCompare(String(b.lead.name)));
+  }
+
+  async function sendFollowup(item) {
+    const l = item.lead;
+    const patchData = {
+      last_touch: new Date().toISOString(),
+      next_followup: new Date(Date.now() + 3 * 86400000).toISOString(),
+      log: addTrail(l, item.kind === 'review' ? 'review' : 'text', item.label + ' sent: ' + item.msg.slice(0, 90))
+    };
+    if (item.kind === 'seq') patchData.followup_stage = (Number(l.followup_stage) || 0) + 1;
+    if (item.kind === 'review') patchData.review_state = 'requested';
+    if (item.kind === 'quote') patchData.followup_stage = Number(l.followup_stage) || 0;
+    await patch(l.id, patchData, 'Text sent to ' + first(l.name));
+  }
+
+  function renderFollowups(el) {
+    const queue = followupQueue().filter((q) => !state.q || String(q.lead.name).toLowerCase().includes(state.q));
+    const due = queue.filter((q) => q.due);
+    const later = queue.filter((q) => !q.due);
+    el.innerHTML =
+      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+        '<div class="kpi dark"><div class="lab">Due now</div><div class="val">' + due.length + '</div><div class="sub">texts waiting to go</div></div>' +
+        '<div class="kpi pink"><div class="lab">Scheduled</div><div class="val">' + later.length + '</div><div class="sub">coming up on the clock</div></div>' +
+        '<div class="kpi"><div class="lab">Sequence steps</div><div class="val">4</div><div class="sub">day 0 · 2 · 5 · 12</div></div>' +
+        '<div class="kpi"><div class="lab">Review asks</div><div class="val">' + queue.filter((q) => q.kind === 'review').length + '</div><div class="sub">after the job is won</div></div>' +
+      '</div>' +
+      '<div class="panel"><div class="panel-head"><h2>Due now</h2><div class="spacer"></div>' +
+        (due.length ? '<button class="btn btn-pink btn-sm" id="runAll">Send all ' + due.length + '</button>' : '') + '</div>' +
+        '<div class="panel-body">' + (due.length ? '<table><thead><tr><th>Client</th><th>Touch</th><th>Message</th><th>Age</th><th></th></tr></thead><tbody>' +
+          due.map((q, i) => '<tr><td><div class="who"><div class="av">' + QB.initials(q.lead.name) + '</div><div><b>' + QB.esc(q.lead.name) + '</b><small>' + QB.esc(q.lead.city || '') + ' · ' + QB.esc(q.lead.ref || '') + '</small></div></div></td>' +
+            '<td><span class="pill ' + (q.kind === 'review' ? 'won' : q.kind === 'quote' ? 'quote' : 'contacted') + '">' + QB.esc(q.label) + '</span></td>' +
+            '<td style="max-width:420px;font-size:12.5px;color:#5A5459">' + QB.esc(q.msg) + '</td>' +
+            '<td>' + daysSince(q.lead.created_date) + 'd</td>' +
+            '<td><button class="btn btn-dark btn-sm" data-send="' + i + '">Send text</button></td></tr>').join('') +
+          '</tbody></table>' : '<div class="empty">Nothing is due. New requests start the sequence automatically.</div>') + '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h2>Scheduled next</h2></div><div class="panel-body">' +
+        (later.length ? '<table><thead><tr><th>Client</th><th>Touch</th><th>Fires in</th></tr></thead><tbody>' +
+          later.map((q) => '<tr data-id="' + q.lead.id + '"><td>' + QB.esc(q.lead.name) + '</td><td>' + QB.esc(q.label) + '</td><td>' + Math.max(0, (SEQ.find((x) => x.stage === (Number(q.lead.followup_stage) || 0)) || {}).after - daysSince(q.lead.created_date) || 0) + ' day(s)</td></tr>').join('') +
+          '</tbody></table>' : '<div class="empty">No scheduled touches.</div>') + '</div></div>';
+    bindRows();
+    $$('button[data-send]').forEach((b) => b.onclick = async (e) => {
+      e.stopPropagation();
+      b.disabled = true;
+      await sendFollowup(due[Number(b.dataset.send)]);
+    });
+    const runAll = $('#runAll');
+    if (runAll) runAll.onclick = async () => {
+      runAll.disabled = true;
+      runAll.textContent = 'Sending…';
+      for (const q of due) await sendFollowup(q);
+      QB.toast(due.length + ' follow-ups sent');
+    };
+  }
+
+  /* ---------- reviews ---------- */
+  async function loadReviews() {
+    if (state.reviews) return state.reviews;
+    try {
+      const r = await QB.api('reviews', {});
+      state.reviews = r.reviews || [];
+    } catch (e) {
+      state.reviews = [];
+    }
+    return state.reviews;
+  }
+
+  async function renderReviews(el) {
+    el.innerHTML = '<div class="empty">Loading reviews…</div>';
+    const reviews = await loadReviews();
+    const won = state.leads.filter((l) => stageOf(l.status) === 'won');
+    const avg = reviews.length ? (reviews.reduce((s, r) => s + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1) : '—';
+    el.innerHTML =
+      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+        '<div class="kpi dark"><div class="lab">Published</div><div class="val">' + reviews.length + '</div><div class="sub">live on the website</div></div>' +
+        '<div class="kpi pink"><div class="lab">Average rating</div><div class="val">' + avg + '</div><div class="sub">out of 5</div></div>' +
+        '<div class="kpi"><div class="lab">Review asks sent</div><div class="val">' + state.leads.filter((l) => l.review_state).length + '</div><div class="sub">automated after close</div></div>' +
+        '<div class="kpi"><div class="lab">Won jobs</div><div class="val">' + won.length + '</div><div class="sub">eligible for a review</div></div>' +
+      '</div>' +
+      '<div class="grid2">' +
+        '<div class="panel"><div class="panel-head"><h2>Published reviews</h2><div class="spacer"></div><button class="btn btn-pink btn-sm" id="addRev">Add a review</button></div><div class="panel-body pad">' +
+          (reviews.length ? reviews.map((r) => '<div style="border-bottom:1px solid #F3F0EE;padding:12px 0">' +
+            '<div style="display:flex;align-items:center;gap:8px"><div class="stars">' + '★★★★★'.slice(0, Number(r.rating) || 5) + '</div><b style="font-size:13.5px">' + QB.esc(r.name || 'Homeowner') + '</b>' +
+            '<span style="font-size:11.5px;color:var(--muted)">' + QB.esc(r.city || '') + (r.service ? ' · ' + QB.esc(r.service) : '') + '</span></div>' +
+            '<div style="font-size:13px;color:#4A4448;margin-top:5px;line-height:1.5">' + QB.esc(r.text || '') + '</div></div>').join('')
+            : '<div class="empty">No reviews yet. Add one, or send a review ask from a won job.</div>') +
+        '</div></div>' +
+        '<div class="panel"><div class="panel-head"><h2>Review requests</h2></div><div class="panel-body">' +
+          (won.length ? '<table><thead><tr><th>Client</th><th>Job</th><th>Ask</th><th></th></tr></thead><tbody>' +
+            won.map((l) => '<tr><td>' + QB.esc(l.name) + '</td><td>' + QB.esc((l._services || [])[0] || '') + '</td>' +
+              '<td>' + (l.review_state ? '<span class="pill won">' + QB.esc(l.review_state) + '</span>' : '<span class="pill contacted">not sent</span>') + '</td>' +
+              '<td>' + (l.review_state ? '' : '<button class="btn btn-outline btn-sm" data-ask="' + l.id + '">Send ask</button>') + '</td></tr>').join('') +
+            '</tbody></table>' : '<div class="empty">Win a job and the review ask appears here automatically.</div>') +
+        '</div></div>' +
+      '</div>';
+    $$('button[data-ask]').forEach((b) => b.onclick = async () => {
+      const l = state.leads.find((x) => x.id === b.dataset.ask);
+      if (!l) return;
+      await patch(l.id, {
+        review_state: 'requested',
+        last_touch: new Date().toISOString(),
+        log: addTrail(l, 'review', 'Review request sent by text')
+      }, 'Review ask sent to ' + first(l.name));
+      state.reviews = null;
+      render();
+    });
+    const addBtn = $('#addRev');
+    if (addBtn) addBtn.onclick = () => reviewModal(won);
+  }
+
+  function reviewModal(won) {
+    modal('<h3>Add a review</h3>' +
+      '<label>Homeowner</label><input id="rvName" placeholder="Marisol R.">' +
+      '<label>City</label><input id="rvCity" placeholder="Phoenix">' +
+      '<label>Service</label><input id="rvService" placeholder="Interior painting">' +
+      '<label>Rating</label><select id="rvRating"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option></select>' +
+      '<label>What they said</label><textarea id="rvText" rows="3" placeholder="Crisp lines, clean crew, fair price."></textarea>' +
+      '<label>Link to request (optional)</label><select id="rvLead"><option value="">None</option>' + won.map((l) => '<option value="' + QB.esc(l.ref) + '">' + QB.esc(l.name) + ' · ' + QB.esc(l.ref) + '</option>').join('') + '</select>' +
+      '<div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button><button class="btn btn-pink btn-sm" id="mSave">Publish review</button></div>', () => {
+      $('#mCancel').onclick = closeModal;
+      $('#mSave').onclick = async () => {
+        const name = $('#rvName').value.trim();
+        const text = $('#rvText').value.trim();
+        if (!name || !text) return QB.toast('Name and review text needed');
+        closeModal();
+        try {
+          await QB.api('review', { review: {
+            name, text,
+            city: $('#rvCity').value.trim(),
+            service: $('#rvService').value.trim(),
+            rating: Number($('#rvRating').value),
+            lead_ref: $('#rvLead').value,
+            source: 'Owner entry'
+          } });
+          state.reviews = null;
+          QB.toast('Review published to the site');
+          render();
+        } catch (e) {
+          QB.toast('Could not save the review');
+        }
+      };
+    });
+  }
+
+  /* ---------- drawer ---------- */
+  function openLead(id) {
+    const l = state.leads.find((x) => x.id === id);
+    if (!l) return;
+    state.current = id;
+    const d = $('#drawer');
+    d.innerHTML = '<div class="dr-head"><div><h3>' + QB.esc(l.name) + '</h3><small>' + QB.esc(l.ref || '') + ' · ' + QB.esc(l.source || '') + ' · ' + QB.esc(QB.fmtDate(l.created_date)) + '</small></div><button class="x">&times;</button></div>' +
+      '<div class="dr-body">' +
+        '<div class="dr-sec"><h5>Status</h5><div class="acts">' +
+          STATUSES.map((s) => '<button data-status="' + s + '" class="' + (l.status === s ? 'primary' : '') + '">' + s + '</button>').join('') +
+        '</div></div>' +
+        '<div class="dr-sec"><h5>Contact</h5><div class="kv">' +
+          '<div><b>Phone</b><a href="tel:' + QB.esc(l.phone || '') + '">' + QB.esc(l.phone || '—') + '</a></div>' +
+          '<div><b>Email</b>' + QB.esc(l.email || '—') + '</div>' +
+          '<div><b>Address</b>' + QB.esc(l.address || '—') + '</div>' +
+          '<div><b>City / ZIP</b>' + QB.esc((l.city || '') + ' ' + (l.zip || '')) + '</div>' +
+        '</div></div>' +
+        '<div class="dr-sec"><h5>The job</h5><div class="kv">' +
+          '<div><b>Services</b>' + QB.esc((l._services || []).join(', ') || '—') + '</div>' +
+          '<div><b>Property</b>' + QB.esc(l.property_type || '—') + '</div>' +
+          '<div><b>Size</b>' + QB.esc(l.rooms || '—') + '</div>' +
+          '<div><b>Timeline</b>' + QB.esc(l.timeline || '—') + '</div>' +
+          '<div><b>Budget</b>' + QB.esc(l.budget || '—') + '</div>' +
+          '<div><b>Walkthrough</b>' + QB.esc(l.walkthrough_at ? QB.fmtDateTime(l.walkthrough_at) : 'not set') + '</div>' +
+          '<div><b>Estimate</b>' + QB.money(l.estimate || 0) + '</div>' +
+          '<div><b>Won value</b>' + QB.money(l.value || 0) + '</div>' +
+        '</div>' + (l.notes ? '<div style="margin-top:10px;background:var(--smoke);border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.5">' + QB.esc(l.notes) + '</div>' : '') + '</div>' +
+        '<div class="dr-sec"><h5>Actions</h5><div class="acts">' +
+          '<button class="primary" data-act="walk">Schedule walkthrough</button>' +
+          '<button data-act="quote">Send quote</button>' +
+          '<button data-act="touch">Log touch</button>' +
+          '<button data-act="note">Add note</button>' +
+          '<a href="sms:' + QB.esc(l.phone || '') + '">Text</a>' +
+          '<a href="tel:' + QB.esc(l.phone || '') + '">Call</a>' +
+        '</div></div>' +
+        '<div class="dr-sec"><h5>Photos (' + l._photos + ')</h5><div class="photo-grid" id="drPhotos">' + (l._photos ? '<div style="color:var(--muted);font-size:13px">Loading…</div>' : '<div style="color:var(--muted);font-size:13px">No photos on this request.</div>') + '</div></div>' +
+        (l.chat ? '<div class="dr-sec"><h5>Chat transcript</h5><div style="background:var(--smoke);border-radius:10px;padding:12px 14px;font-size:12.5px;white-space:pre-wrap;line-height:1.55;max-height:220px;overflow:auto">' + QB.esc(l.chat) + '</div></div>' : '') +
+        '<div class="dr-sec"><h5>Activity</h5><ul class="trail">' +
+          (l._log.length ? l._log.map((e) => '<li>' + QB.esc(e.text || '') + '<time>' + QB.esc(QB.fmtDateTime(e.at)) + '</time></li>').join('') : '<li>Request received<time>' + QB.esc(QB.fmtDateTime(l.created_date)) + '</time></li>') +
+        '</ul></div>' +
+      '</div>';
+    d.classList.add('on');
+    $('#scrim').classList.add('on');
+
+    $('.x', d).onclick = closeDrawer;
+    $$('button[data-status]', d).forEach((b) => b.onclick = async () => {
+      const s = b.dataset.status;
+      await patch(l.id, { status: s, stage: stageOf(s), log: addTrail(l, 'status', 'Status set to ' + s) }, 'Status: ' + s);
+    });
+    $$('button[data-act]', d).forEach((b) => b.onclick = () => doAction(b.dataset.act, l));
+    if (l._photos) {
+      getPhotos(l.ref).then((photos) => {
+        const box = $('#drPhotos');
+        if (!box) return;
+        box.innerHTML = photos.length
+          ? photos.map((p) => '<div class="ph" data-src="' + p.data + '"><img src="' + p.data + '" alt=""><span>' + QB.esc(p.name) + '</span></div>').join('')
+          : '<div style="color:var(--muted);font-size:13px">Photos could not be loaded.</div>';
+        $$('.ph', box).forEach((p) => p.onclick = () => { $('#lightbox img').src = p.dataset.src; $('#lightbox').classList.add('on'); });
+      });
+    }
+  }
+  function closeDrawer() {
+    $('#drawer').classList.remove('on');
+    $('#scrim').classList.remove('on');
+    state.current = null;
+  }
+  $('#scrim').addEventListener('click', closeDrawer);
+  $('#lightbox').addEventListener('click', () => $('#lightbox').classList.remove('on'));
+
+  /* ---------- modal actions ---------- */
+  function modal(html, onMount) {
+    $('#modalCard').innerHTML = html;
+    $('#modal').classList.add('on');
+    onMount && onMount();
+  }
+  function closeModal() { $('#modal').classList.remove('on'); }
+  $('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+
+  function doAction(act, l) {
+    if (act === 'walk') {
+      const guess = new Date(Date.now() + 86400000);
+      modal('<h3>Schedule walkthrough</h3><label>Date and time</label><input type="datetime-local" id="mWhen" value="' + new Date(guess.getTime() - guess.getTimezoneOffset() * 60000).toISOString().slice(0, 16) + '"><label>Note (optional)</label><input id="mNote" placeholder="Gate code, meet at the front"><div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button><button class="btn btn-pink btn-sm" id="mSave">Save</button></div>', () => {
+        $('#mCancel').onclick = closeModal;
+        $('#mSave').onclick = async () => {
+          const when = $('#mWhen').value;
+          if (!when) return QB.toast('Pick a date');
+          const note = $('#mNote').value.trim();
+          closeModal();
+          await patch(l.id, {
+            walkthrough_at: new Date(when).toISOString(),
+            status: 'Walkthrough set', stage: 'walkthrough',
+            log: addTrail(l, 'walkthrough', 'Walkthrough booked for ' + QB.fmtDateTime(new Date(when).toISOString()) + (note ? ' · ' + note : ''))
+          }, 'Walkthrough scheduled');
+        };
+      });
+      return;
+    }
+    if (act === 'quote') {
+      modal('<h3>Send quote</h3><label>Quoted amount</label><input id="mAmt" type="number" min="0" step="50" placeholder="4800"><label>Notes to client (optional)</label><textarea id="mNote" rows="3" placeholder="Two coats, includes trim and doors."></textarea><div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button><button class="btn btn-pink btn-sm" id="mSave">Mark quote sent</button></div>', () => {
+        $('#mCancel').onclick = closeModal;
+        $('#mSave').onclick = async () => {
+          const amt = Number($('#mAmt').value);
+          if (!amt) return QB.toast('Enter the amount');
+          closeModal();
+          await patch(l.id, {
+            estimate: amt, status: 'Quote sent', stage: 'quote',
+            log: addTrail(l, 'quote', 'Quote sent for ' + QB.money(amt))
+          }, 'Quote sent: ' + QB.money(amt));
+        };
+      });
+      return;
+    }
+    if (act === 'touch') {
+      modal('<h3>Log a touch</h3><label>What happened</label><textarea id="mNote" rows="3" placeholder="Left a voicemail, will try again Thursday."></textarea><div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button><button class="btn btn-pink btn-sm" id="mSave">Log it</button></div>', () => {
+        $('#mCancel').onclick = closeModal;
+        $('#mSave').onclick = async () => {
+          const note = $('#mNote').value.trim();
+          if (!note) return QB.toast('Add a note');
+          closeModal();
+          await patch(l.id, { last_touch: new Date().toISOString(), log: addTrail(l, 'touch', note) }, 'Touch logged');
+        };
+      });
+      return;
+    }
+    if (act === 'note') {
+      modal('<h3>Add a note</h3><label>Note</label><textarea id="mNote" rows="3" placeholder="Wants to start after the holidays."></textarea><div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button><button class="btn btn-pink btn-sm" id="mSave">Save note</button></div>', () => {
+        $('#mCancel').onclick = closeModal;
+        $('#mSave').onclick = async () => {
+          const note = $('#mNote').value.trim();
+          if (!note) return QB.toast('Add a note');
+          closeModal();
+          await patch(l.id, { notes: (l.notes ? l.notes + '\n' : '') + note, log: addTrail(l, 'note', note) }, 'Note saved');
+        };
+      });
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeDrawer(); closeModal(); $('#lightbox').classList.remove('on'); }
+  });
+})();
+</script>
+</body>
+</html>

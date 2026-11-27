@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Queen Bee's Painting and Remodeling">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F6E3B4"/>
+      <stop offset=".38" stop-color="#D9B571"/>
+      <stop offset=".62" stop-color="#B8935A"/>
+      <stop offset="1" stop-color="#EBD49B"/>
+    </linearGradient>
+    <linearGradient id="goldSoft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F9EDD0"/>
+      <stop offset="1" stop-color="#D9B571"/>
+    </linearGradient>
+    <clipPath id="bodyClip">
+      <ellipse cx="60" cy="70" rx="17.5" ry="13.5"/>
+    </clipPath>
+  </defs>
+
+  <!-- hexagon badge -->
+  <path d="M60 4.5 108 32v56L60 115.5 12 88V32Z" fill="none" stroke="url(#gold)" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M60 12 101 36v48L60 108 19 84V36Z" fill="none" stroke="url(#gold)" stroke-width=".9" stroke-linejoin="round" opacity=".55"/>
+
+  <!-- crown -->
+  <path d="M45 40.5 48.6 30.8 55.2 37 60 27.5 64.8 37 71.4 30.8 75 40.5Z" fill="url(#goldSoft)" stroke="#B8935A" stroke-width=".9" stroke-linejoin="round"/>
+  <circle cx="48.6" cy="29.4" r="1.9" fill="#F9EDD0" stroke="#B8935A" stroke-width=".7"/>
+  <circle cx="60" cy="26.1" r="2.1" fill="#F9EDD0" stroke="#B8935A" stroke-width=".7"/>
+  <circle cx="71.4" cy="29.4" r="1.9" fill="#F9EDD0" stroke="#B8935A" stroke-width=".7"/>
+
+  <!-- antennae -->
+  <path d="M56 48.5c-2.4-3.2-4.8-4.6-7.4-4.4" fill="none" stroke="#B8935A" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M64 48.5c2.4-3.2 4.8-4.6 7.4-4.4" fill="none" stroke="#B8935A" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="47.8" cy="43.6" r="1.5" fill="#B8935A"/>
+  <circle cx="72.2" cy="43.6" r="1.5" fill="#B8935A"/>
+
+  <!-- wings -->
+  <ellipse cx="42.5" cy="58.5" rx="13.5" ry="7.6" transform="rotate(-24 42.5 58.5)" fill="#FFFFFF" opacity=".92" stroke="#C9A961" stroke-width="1.1"/>
+  <ellipse cx="77.5" cy="58.5" rx="13.5" ry="7.6" transform="rotate(24 77.5 58.5)" fill="#FFFFFF" opacity=".92" stroke="#C9A961" stroke-width="1.1"/>
+
+  <!-- body -->
+  <ellipse cx="60" cy="70" rx="17.5" ry="13.5" fill="url(#goldSoft)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="40" y="63.5" width="40" height="4.2" fill="#0A0A0B"/>
+    <rect x="40" y="72.4" width="40" height="4.2" fill="#0A0A0B"/>
+    <rect x="40" y="81.3" width="40" height="4.2" fill="#0A0A0B"/>
+  </g>
+  <ellipse cx="60" cy="70" rx="17.5" ry="13.5" fill="none" stroke="#B8935A" stroke-width="1.2"/>
+
+  <!-- head -->
+  <circle cx="60" cy="51.5" r="8.2" fill="#0A0A0B"/>
+  <circle cx="57.2" cy="49.8" r="1.5" fill="#F9EDD0"/>
+  <circle cx="62.8" cy="49.8" r="1.5" fill="#F9EDD0"/>
+
+  <!-- stinger -->
+  <path d="M60 84.5 57.4 90h5.2Z" fill="#B8935A"/>
+</svg>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free Photo Quote | Queen Bee's Painting &amp; Remodeling</title>
+<meta name="description" content="Send photos of your project and get a written painting or remodeling estimate from Queen Bee's in Phoenix, usually within 48 hours.">
+<link rel="icon" href="assets/img/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/qb.css">
+<style>
+.qwrap{background:var(--smoke);min-height:100vh;padding:0 0 70px}
+.qhead{background:var(--ink);color:#fff;padding:34px 0 30px;position:relative;overflow:hidden}
+.qhead:before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 80% 0%,rgba(255,61,139,.2),transparent 62%)}
+.qhead .wrap{position:relative}
+.qhead h1{font-size:clamp(28px,3.4vw,40px);margin:8px 0 10px}
+.qhead p{color:rgba(255,255,255,.72);max-width:56ch;font-size:15.5px}
+.qbody{max-width:900px;margin:-26px auto 0;padding:0 20px;position:relative;z-index:2}
+.card{background:#fff;border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--line)}
+.prog{display:flex;gap:0;border-bottom:1px solid var(--line);background:#fff}
+.prog div{flex:1;padding:15px 10px;text-align:center;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#B3AEB4;border-bottom:3px solid transparent}
+.prog div.on{color:var(--ink);border-bottom-color:var(--pink)}
+.prog div.done{color:var(--gold-deep)}
+.qstep{padding:32px 34px 30px;display:none}
+.qstep.on{display:block}
+.qstep h2{font-size:26px;margin-bottom:6px}
+.qstep .hint{font-size:14.5px;color:var(--muted);margin-bottom:22px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;font-size:15px;font-family:inherit;color:var(--text);background:#fff;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--pink)}
+.field textarea{min-height:96px;resize:vertical}
+.field .err{color:#C4164F;font-size:12.5px;margin-top:5px;display:none}
+.field.bad input,.field.bad select{border-color:#E8618C}
+.field.bad .err{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1.4fr 1fr .8fr;gap:14px}
+.pick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pick button{border:1.5px solid var(--line);background:#fff;border-radius:13px;padding:14px 12px;text-align:left;font-size:13.5px;font-weight:700;color:var(--text);transition:.16s;line-height:1.3}
+.pick button small{display:block;font-weight:600;color:var(--muted);font-size:11.5px;margin-top:3px}
+.pick button:hover{border-color:var(--gold)}
+.pick button.on{border-color:var(--pink);background:var(--pink-soft);box-shadow:0 6px 18px rgba(255,61,139,.14)}
+.drop{border:2px dashed #DCD3D8;border-radius:16px;padding:34px 22px;text-align:center;background:#FDFBFC;transition:.18s;cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--pink);background:var(--pink-soft)}
+.drop b{display:block;font-size:16px;margin-bottom:5px}
+.drop span{font-size:13.5px;color:var(--muted)}
+.thumbs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.thumb{position:relative;border-radius:12px;overflow:hidden;background:var(--ink);aspect-ratio:1}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb button{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(10,10,11,.78);color:#fff;font-size:14px;line-height:1;display:grid;place-items:center}
+.thumb .nm{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(10,10,11,.8));color:#fff;font-size:10.5px;padding:12px 7px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tips{background:#FBF7F9;border:1px solid #F1E4EA;border-radius:12px;padding:14px 16px;font-size:13px;color:#7A5063;margin-top:16px;line-height:1.55}
+.tips b{color:#5C2F45}
+.qfoot{display:flex;align-items:center;gap:12px;padding:18px 34px 24px;border-top:1px solid var(--line);background:#fff}
+.qfoot .spacer{flex:1}
+.qfoot .note{font-size:12.5px;color:var(--muted)}
+.ballpark{margin-top:18px;border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:linear-gradient(180deg,#fff,#FDF9FB)}
+.ballpark b{font-family:var(--display);font-size:20px;display:block}
+.ballpark small{color:var(--muted);font-size:12.5px}
+.done{text-align:center;padding:52px 30px}
+.done .tick{width:64px;height:64px;border-radius:50%;background:var(--pink-soft);display:grid;place-items:center;margin:0 auto 18px}
+.done h2{font-size:30px;margin-bottom:10px}
+.done p{color:var(--muted);max-width:46ch;margin:0 auto 8px}
+.ref{display:inline-block;margin:16px 0 22px;background:var(--ink);color:var(--gold);font-weight:800;letter-spacing:.12em;padding:10px 18px;border-radius:10px;font-size:14px}
+.done .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@media(max-width:760px){.qstep{padding:24px 20px}.qfoot{padding:16px 20px 20px;flex-wrap:wrap}.grid2,.grid3{grid-template-columns:1fr}.pick{grid-template-columns:1fr 1fr}.thumbs{grid-template-columns:repeat(3,1fr)}.prog div{font-size:10px;padding:12px 4px}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html">
+      <img src="assets/img/logo.svg" alt="Queen Bee's">
+      <span class="brand-txt"><span class="brand-name">Queen Bee's</span><span class="brand-sub">Painting &amp; Remodeling</span></span>
+    </a>
+    <div class="nav-cta" style="margin-left:auto">
+      <a class="nav-phone" href="tel:+16025550142"><span>(602) 555-0142</span></a>
+      <a class="btn btn-outline btn-sm" href="index.html">Back to site</a>
+    </div>
+  </div>
+</header>
+
+<div class="qwrap">
+  <div class="qhead">
+    <div class="wrap">
+      <span class="eyebrow gold">Free estimate</span>
+      <h1>Show us the job. We'll price it.</h1>
+      <p>Four short steps. Add photos of the room, cabinets or exterior and we will send a written estimate, usually within 48 hours. No obligation, no sales visit for paint and cabinets.</p>
+    </div>
+  </div>
+
+  <div class="qbody">
+    <form class="card" id="quoteForm" novalidate>
+      <div class="prog" id="prog">
+        <div class="on">1 · Project</div>
+        <div>2 · Details</div>
+        <div>3 · Photos</div>
+        <div>4 · Contact</div>
+      </div>
+
+      <!-- step 1 -->
+      <section class="qstep on" data-step="1">
+        <h2>What are we working on?</h2>
+        <div class="hint">Pick everything that applies. You can change your mind later.</div>
+        <div class="pick" id="svcPick"></div>
+        <div class="field" style="margin-top:22px">
+          <label>Property type</label>
+          <select id="propType">
+            <option>Single family home</option>
+            <option>Townhome / condo</option>
+            <option>Apartment / rental</option>
+            <option>Commercial space</option>
+          </select>
+        </div>
+        <div class="ballpark" id="ballpark" style="display:none"></div>
+      </section>
+
+      <!-- step 2 -->
+      <section class="qstep" data-step="2">
+        <h2>Where and how big?</h2>
+        <div class="hint">This tells us travel and scope. Nothing here has to be exact.</div>
+        <div class="field">
+          <label>Street address</label>
+          <input id="address" placeholder="1234 E Palm Ln" autocomplete="street-address">
+          <div class="err">Add the street address so we can check the route.</div>
+        </div>
+        <div class="grid3">
+          <div class="field">
+            <label>City</label>
+            <input id="city" placeholder="Phoenix" autocomplete="address-level2">
+            <div class="err">Add your city.</div>
+          </div>
+          <div class="field">
+            <label>ZIP</label>
+            <input id="zip" placeholder="85006" inputmode="numeric" maxlength="5" autocomplete="postal-code">
+            <div class="err">Five digit ZIP.</div>
+          </div>
+          <div class="field">
+            <label>Approx. sq ft</label>
+            <input id="sqft" placeholder="1800" inputmode="numeric">
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Rooms or areas</label>
+            <input id="rooms" placeholder="Living room, hallway, 2 beds">
+          </div>
+          <div class="field">
+            <label>When do you need it done?</label>
+            <select id="timeline">
+              <option>As soon as possible</option>
+              <option>Next 2 weeks</option>
+              <option>Next 1–2 months</option>
+              <option>Just planning / budgeting</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Budget range</label>
+          <select id="budget">
+            <option>Not sure yet</option>
+            <option>Under $2,500</option>
+            <option>$2,500 – $5,000</option>
+            <option>$5,000 – $10,000</option>
+            <option>$10,000 – $25,000</option>
+            <option>$25,000+</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- step 3 -->
+      <section class="qstep" data-step="3">
+        <h2>Add your photos</h2>
+        <div class="hint">Up to 8 photos. Wide shots of each room, plus any damage or detail you want us to see.</div>
+        <div class="drop" id="drop">
+          <input type="file" id="fileInput" accept="image/*" multiple hidden>
+          <div style="font-size:26px;margin-bottom:6px">📷</div>
+          <b>Tap to add photos or drag them here</b>
+          <span>JPG, PNG or HEIC · taken on your phone is perfect</span>
+        </div>
+        <div class="thumbs" id="thumbs"></div>
+        <div class="tips">
+          <b>What helps most:</b> one wide shot of each room, one close-up of any peeling, cracks or water stains, and a photo of the cabinets or exterior wall if that is the job. We compress them automatically, so send what you have.
+        </div>
+        <div class="field" style="margin-top:18px">
+          <label>Anything we should know? <span style="text-transform:none;font-weight:600;color:#A39DA4">(optional)</span></label>
+          <textarea id="notes" placeholder="Two-story entry, pets at home, ceiling has a water stain from the AC, hoping to match the existing gray…"></textarea>
+        </div>
+      </section>
+
+      <!-- step 4 -->
+      <section class="qstep" data-step="4">
+        <h2>Where do we send the estimate?</h2>
+        <div class="hint">We text the estimate and a link to approve it. No spam, no reselling your number.</div>
+        <div class="grid2">
+          <div class="field">
+            <label>Full name</label>
+            <input id="name" placeholder="Marisol Rivera" autocomplete="name">
+            <div class="err">We need a name for the estimate.</div>
+          </div>
+          <div class="field">
+            <label>Mobile number</label>
+            <input id="phone" placeholder="(602) 555-0123" inputmode="tel" autocomplete="tel">
+            <div class="err">Add a number we can text.</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Email <span style="text-transform:none;font-weight:600;color:#A39DA4">(optional)</span></label>
+          <input id="email" placeholder="you@email.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label>Best time to reach you</label>
+          <select id="bestTime">
+            <option>Text is fine</option>
+            <option>Morning (8am – 12pm)</option>
+            <option>Afternoon (12pm – 4pm)</option>
+            <option>Evening (4pm – 6pm)</option>
+          </select>
+        </div>
+        <label style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--muted);line-height:1.5">
+          <input type="checkbox" id="consent" checked style="margin-top:3px;width:16px;height:16px">
+          <span>It is okay to text me about this estimate. Message rates may apply.</span>
+        </label>
+      </section>
+
+      <div class="qfoot">
+        <button type="button" class="btn btn-outline btn-sm" id="backBtn" style="display:none">← Back</button>
+        <div class="spacer"></div>
+        <span class="note" id="footNote">Step 1 of 4</span>
+        <button type="button" class="btn btn-pink" id="nextBtn">Continue →</button>
+        <button type="submit" class="btn btn-pink" id="submitBtn" style="display:none">Send my request</button>
+      </div>
+    </form>
+
+    <div class="card" id="successCard" style="display:none">
+      <div class="done">
+        <div class="tick">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#D81E6E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>You're in the hive.</h2>
+        <p>Your request is with the estimator now. We review photos the same business day and send a written estimate, usually within 48 hours.</p>
+        <div class="ref" id="refCode">QB-000000-0000</div>
+        <p id="photoSummary" style="margin-bottom:18px"></p>
+        <div id="bookBox" style="max-width:520px;margin:0 auto"></div>
+        <div class="row">
+          <a class="btn btn-dark" href="tel:+16025550142">Call (602) 555-0142</a>
+          <a class="btn btn-outline" href="index.html">Back to the site</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/qb.js"></script>
+<script>
+(function () {
+  const SERVICES = [
+    ['Interior painting', 'Walls, ceilings, trim'],
+    ['Exterior painting', 'Stucco, siding, trim'],
+    ['Cabinet refinishing', 'Sprayed doors, new hardware'],
+    ['Drywall and texture', 'Repairs, popcorn removal'],
+    ['Kitchen remodel', 'Cabinets, counters, tile'],
+    ['Bathroom remodel', 'Tile, vanity, fixtures']
+  ];
+  const RANGE = {
+    'Interior painting': [2300, 8200],
+    'Exterior painting': [1900, 7600],
+    'Cabinet refinishing': [1400, 5700],
+    'Drywall and texture': [350, 1800],
+    'Kitchen remodel': [18000, 60000],
+    'Bathroom remodel': [12000, 40000]
+  };
+
+  const state = { step: 1, services: [], photos: [] };
+  const $ = QB.$;
+  const pick = $('#svcPick');
+
+  // prefill from ?type=
+  const pre = new URLSearchParams(location.search).get('type');
+  if (pre) state.services.push(pre);
+
+  pick.innerHTML = SERVICES.map(([name, sub], i) =>
+    '<button type="button" data-svc="' + QB.esc(name) + '" class="' + (state.services.includes(name) ? 'on' : '') + '">' + QB.esc(name) + '<small>' + QB.esc(sub) + '</small></button>'
+  ).join('');
+
+  pick.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-svc]');
+    if (!b) return;
+    const name = b.dataset.svc;
+    if (state.services.includes(name)) {
+      state.services = state.services.filter((s) => s !== name);
+      b.classList.remove('on');
+    } else {
+      state.services.push(name);
+      b.classList.add('on');
+    }
+    drawBallpark();
+  });
+
+  function drawBallpark() {
+    const el = $('#ballpark');
+    if (!state.services.length) { el.style.display = 'none'; return; }
+    let lo = 0, hi = 0;
+    state.services.forEach((s) => {
+      const r = RANGE[s];
+      if (r) { lo += r[0]; hi += r[1]; }
+    });
+    if (!lo) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.innerHTML = '<div class="eyebrow gold" style="margin-bottom:6px">Typical Valley range</div>' +
+      '<b>' + QB.money(lo) + ' – ' + QB.money(hi) + '</b>' +
+      '<small>Based on similar ' + state.services.join(' + ').toLowerCase() + ' jobs. Your written estimate replaces this number, and photos are what make it accurate.</small>';
+  }
+  drawBallpark();
+
+  /* ---------- navigation ---------- */
+  function setStep(n) {
+    state.step = n;
+    QB.$$('.qstep').forEach((s) => s.classList.toggle('on', Number(s.dataset.step) === n));
+    QB.$$('#prog div').forEach((d, i) => {
+      d.classList.toggle('on', i + 1 === n);
+      d.classList.toggle('done', i + 1 < n);
+    });
+    $('#backBtn').style.display = n === 1 ? 'none' : 'inline-flex';
+    $('#nextBtn').style.display = n === 4 ? 'none' : 'inline-flex';
+    $('#submitBtn').style.display = n === 4 ? 'inline-flex' : 'none';
+    $('#footNote').textContent = 'Step ' + n + ' of 4';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function bad(id, on) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const f = el.closest('.field');
+    if (f) f.classList.toggle('bad', !!on);
+  }
+
+  function validate(n) {
+    let ok = true;
+    if (n === 1) {
+      if (!state.services.length) { QB.toast('Pick at least one service'); ok = false; }
+    }
+    if (n === 2) {
+      if (!$('#address').value.trim()) { bad('address', true); ok = false; } else bad('address', false);
+      if (!$('#city').value.trim()) { bad('city', true); ok = false; } else bad('city', false);
+      const z = $('#zip').value.trim();
+      if (!/^\d{5}$/.test(z)) { bad('zip', true); ok = false; } else bad('zip', false);
+    }
+    if (n === 4) {
+      if (!$('#name').value.trim()) { bad('name', true); ok = false; } else bad('name', false);
+      const p = $('#phone').value.replace(/\D/g, '');
+      if (p.length < 10) { bad('phone', true); ok = false; } else bad('phone', false);
+    }
+    return ok;
+  }
+
+  $('#nextBtn').addEventListener('click', () => { if (validate(state.step)) setStep(Math.min(4, state.step + 1)); });
+  $('#backBtn').addEventListener('click', () => setStep(Math.max(1, state.step - 1)));
+
+  /* ---------- photos ---------- */
+  const drop = $('#drop'), input = $('#fileInput'), thumbs = $('#thumbs');
+  drop.addEventListener('click', () => input.click());
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
+  input.addEventListener('change', () => { addFiles(input.files); input.value = ''; });
+
+  async function addFiles(files) {
+    const list = Array.from(files || []).filter((f) => /^image\//.test(f.type));
+    if (!list.length) { QB.toast('Those are not image files'); return; }
+    const room = 8 - state.photos.length;
+    if (room <= 0) { QB.toast('That is all 8 photos. Remove one to swap.'); return; }
+    for (const f of list.slice(0, room)) {
+      try {
+        const c = await QB.compressImage(f, 1400, 0.72);
+        state.photos.push(c);
+      } catch (err) {
+        QB.toast('Could not read ' + f.name);
+      }
+    }
+    drawThumbs();
+  }
+
+  function drawThumbs() {
+    thumbs.innerHTML = state.photos.map((p, i) =>
+      '<div class="thumb"><img src="' + p.data + '" alt=""><button type="button" data-i="' + i + '" aria-label="Remove">&times;</button><span class="nm">' + QB.esc(p.name) + '</span></div>'
+    ).join('');
+    QB.$$('.thumb button', thumbs).forEach((b) => {
+      b.onclick = () => { state.photos.splice(Number(b.dataset.i), 1); drawThumbs(); };
+    });
+  }
+
+  /* ---------- submit ---------- */
+  $('#quoteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validate(1) || !validate(2)) { QB.toast('Please finish the earlier steps'); setStep(2); return; }
+    if (!validate(4)) return;
+
+    const btn = $('#submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    const lead = {
+      name: $('#name').value.trim(),
+      phone: $('#phone').value.trim(),
+      email: $('#email').value.trim(),
+      address: $('#address').value.trim(),
+      city: $('#city').value.trim(),
+      zip: $('#zip').value.trim(),
+      services: state.services,
+      property_type: $('#propType').value,
+      rooms: ($('#rooms').value.trim() || '') + ($('#sqft').value ? ' · ~' + $('#sqft').value + ' sq ft' : ''),
+      timeline: $('#timeline').value,
+      budget: $('#budget').value,
+      notes: $('#notes').value.trim(),
+      source: 'Photo quote form'
+    };
+
+    try {
+      const r = await QB.api('submit', { lead, photos: state.photos.map((p) => ({ name: p.name, data: p.data })) });
+      if (!r.ok) throw new Error(r.error || 'failed');
+      $('#quoteForm').style.display = 'none';
+      $('#refCode').textContent = r.ref;
+      $('#photoSummary').textContent = r.photos
+        ? r.photos + ' photo' + (r.photos === 1 ? '' : 's') + ' attached to your request.'
+        : 'Your request is filed. If you meant to add photos, text them to (602) 555-0142 and we will attach them.';
+      $('#successCard').style.display = 'block';
+      QB.renderBooking($('#bookBox'), r.ref, { address: lead.address + ', ' + lead.city });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Send my request';
+      QB.toast('We could not send that. Call or text (602) 555-0142 and we will take it directly.');
+    }
+  });
+
+  setStep(1);
+  QB.initReveal();
+})();
+</script>
+</body>
+</html>
