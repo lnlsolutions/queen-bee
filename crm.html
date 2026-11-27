@@ -336,6 +336,22 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
   }
 
   /* ---------- render ---------- */
+  function bindRowOpen() {
+    const el = $('#content');
+    if (!el || el.dataset.rowopen === '1') return;
+    el.dataset.rowopen = '1';
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('button, a, select, input, textarea, label')) return;
+      const tr = e.target.closest('tbody tr[data-id]');
+      if (tr && tr.dataset.id) openLead(tr.dataset.id);
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const tr = e.target.closest('tbody tr[data-id]');
+      if (tr && tr.dataset.id) { e.preventDefault(); openLead(tr.dataset.id); }
+    });
+  }
+
   function render() {
     const c = counts();
     $('#nDash').textContent = c.open;
@@ -352,6 +368,7 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
     if (state.tab === 'dash') return renderDash(el, c);
     if (state.tab === 'requests') return renderRequests(el);
     if (state.tab === 'pipeline') return renderPipeline(el);
+    bindRowOpen();
     if (state.tab === 'followups') return renderFollowups(el);
     if (state.tab === 'reviews') return renderReviews(el);
     if (state.tab === 'docs') return renderDocs(el);
@@ -459,88 +476,323 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
     }));
   }
 
+  /* ---------- projects ---------- */
+  const PHASES = [['scheduled', 'Scheduled'], ['in_progress', 'In progress'], ['punch', 'Punch list'], ['complete', 'Complete']];
+  const phaseOf = (l) => (PHASES.some((p) => p[0] === l.stage) ? l.stage : 'scheduled');
+  const phaseLabel = (k) => (PHASES.find((p) => p[0] === k) || PHASES[0])[1];
+
   function renderProjects(el) {
-    const won = filtered().filter((l) => stageOf(l.status) === 'won');
-    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Active projects</h2><div class="spacer"></div><span class="pill won">' + won.length + ' won</span></div>' +
-      '<div class="panel-body">' + (won.length ? '<table><thead><tr><th>Project</th><th>Work</th><th>Value</th><th>Scheduled</th><th>Owner</th></tr></thead><tbody>' +
-        won.map((l) => '<tr data-id="' + l.id + '"><td><div class="who"><div class="av">' + QB.initials(l.name) + '</div><div><b>' + QB.esc(l.name) + '</b><small>' + QB.esc(l.address || l.city || '') + '</small></div></div></td>' +
-          '<td>' + QB.esc((l._services || []).join(', ')) + '</td><td class="num">' + QB.money(l.value || l.estimate || 0) + '</td><td>' + QB.esc(l.walkthrough_at ? QB.fmtDateTime(l.walkthrough_at) : 'TBD') + '</td><td>' + QB.esc(l.assigned || 'Kelsey') + '</td></tr>').join('') +
-        '</tbody></table>' : '<div class="empty">No won jobs yet. Move a request to Won from the pipeline and it shows up here.</div>') + '</div></div>';
-    bindRows();
-  }
-
-  function renderSchedule(el) {
-    const withDate = filtered().filter((l) => l.walkthrough_at).sort((a, b) => a.walkthrough_at.localeCompare(b.walkthrough_at));
-    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Walkthrough calendar</h2></div><div class="panel-body">' +
-      (withDate.length ? '<table><thead><tr><th>When</th><th>Client</th><th>Address</th><th>Work</th><th>Status</th></tr></thead><tbody>' +
-        withDate.map((l) => '<tr data-id="' + l.id + '"><td><b>' + QB.esc(QB.fmtDateTime(l.walkthrough_at)) + '</b></td><td>' + QB.esc(l.name) + '<div style="font-size:11.5px;color:var(--muted)">' + QB.esc(l.phone || '') + '</div></td><td>' + QB.esc(l.address || '') + '<div style="font-size:11.5px;color:var(--muted)">' + QB.esc(l.city || '') + '</div></td><td>' + QB.esc((l._services || []).join(', ')) + '</td><td><span class="pill ' + pillClass(l.status) + '">' + QB.esc(l.status) + '</span></td></tr>').join('') +
-        '</tbody></table>' : '<div class="empty">Nothing on the calendar. Open a request and choose Schedule walkthrough.</div>') + '</div></div>';
-    bindRows();
-  }
-
-  async function renderPhotos(el) {
-    const withPhotos = filtered().filter((l) => l._photos > 0);
-    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Photos from homeowners</h2><div class="spacer"></div><span class="pill photos">' + withPhotos.reduce((s, l) => s + l._photos, 0) + ' photos</span></div><div class="panel-body pad" id="photoBody">' +
-      (withPhotos.length ? '<div class="empty">Loading photos…</div>' : '<div class="empty">No photos yet. They appear here the moment a quote request with images comes in.</div>') + '</div></div>';
-    if (!withPhotos.length) return;
-    const body = $('#photoBody');
-    let html = '';
-    for (const l of withPhotos) {
-      const photos = await getPhotos(l.ref);
-      html += '<div style="margin-bottom:20px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><b style="font-size:14px">' + QB.esc(l.name) + '</b><span style="font-size:12px;color:var(--muted)">' + QB.esc(l.ref) + ' · ' + QB.esc(l.city || '') + '</span><button class="btn btn-outline btn-sm" style="margin-left:auto" data-open="' + l.id + '">Open request</button></div>' +
-        '<div class="photo-grid">' + photos.map((p) => '<div class="ph" data-src="' + p.data + '"><img src="' + p.data + '" alt=""><span>' + QB.esc(p.name) + '</span></div>').join('') + '</div></div>';
-    }
-    body.innerHTML = html || '<div class="empty">Photos could not be loaded.</div>';
-    $$('.ph').forEach((p) => p.addEventListener('click', () => {
-      $('#lightbox img').src = p.dataset.src;
-      $('#lightbox').classList.add('on');
-    }));
-    $$('button[data-open]').forEach((b) => b.addEventListener('click', () => openLead(b.dataset.open)));
-  }
-
-  async function getPhotos(ref) {
-    if (state.photos[ref]) return state.photos[ref];
-    try {
-      const r = await QB.api('photos', { ref });
-      state.photos[ref] = r.photos || [];
-    } catch (e) {
-      state.photos[ref] = [];
-    }
-    return state.photos[ref];
-  }
-
-  function renderMessages(el) {
-    const withChat = filtered().filter((l) => (l.chat || '').trim());
-    el.innerHTML = '<div class="panel"><div class="panel-head"><h2>Conversations</h2><div class="spacer"></div><span class="pill new">' + withChat.length + ' threads</span></div><div class="panel-body">' +
-      (withChat.length ? withChat.map((l) => {
-        const lines = (l.chat || '').split('\n').filter(Boolean).slice(-6);
-        return '<div style="padding:14px 18px;border-bottom:1px solid #F3F0EE;cursor:pointer" data-id="' + l.id + '">' +
-          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="av">' + QB.initials(l.name) + '</div><div><b style="font-size:13.5px">' + QB.esc(l.name) + '</b><div style="font-size:11.5px;color:var(--muted)">' + QB.esc(l.phone || '') + ' · ' + QB.esc(l.source || '') + ' · ' + QB.esc(QB.ago(l.created_date)) + '</div></div><span class="pill ' + pillClass(l.status) + '" style="margin-left:auto">' + QB.esc(l.status) + '</span></div>' +
-          '<div style="background:var(--smoke);border-radius:11px;padding:11px 13px;font-size:12.5px;color:#4A4448;white-space:pre-wrap;line-height:1.55">' + QB.esc(lines.join('\n')) + '</div></div>';
-      }).join('') : '<div class="empty">No chat transcripts yet. Bee saves every conversation with the request.</div>') + '</div></div>';
-    bindRows();
-  }
-
-  function renderAnalytics(el) {
-    const l = state.leads;
-    const bySvc = tally(l.flatMap((x) => x._services));
-    const byCity = tally(l.map((x) => x.city));
-    const bySource = tally(l.map((x) => x.source));
-    const won = l.filter((x) => stageOf(x.status) === 'won').length;
-    const conv = l.length ? Math.round((won / l.length) * 100) : 0;
-    const avg = l.filter((x) => Number(x.estimate) > 0);
-    const avgTicket = avg.length ? avg.reduce((s, x) => s + Number(x.estimate), 0) / avg.length : 0;
-    el.innerHTML = '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
-      '<div class="kpi"><div class="lab">Requests</div><div class="val">' + l.length + '</div><div class="sub">all time</div></div>' +
-      '<div class="kpi"><div class="lab">Close rate</div><div class="val">' + conv + '%</div><div class="sub">' + won + ' won</div></div>' +
-      '<div class="kpi"><div class="lab">Avg quoted</div><div class="val">' + QB.money(avgTicket) + '</div><div class="sub">' + avg.length + ' quotes</div></div>' +
-      '<div class="kpi"><div class="lab">Photos per request</div><div class="val">' + (l.length ? (l.reduce((s, x) => s + x._photos, 0) / l.length).toFixed(1) : '0') + '</div><div class="sub">photo quote rate</div></div>' +
+    const jobs = state.leads.filter((l) => stageOf(l.status) === 'won');
+    const value = jobs.reduce((s, l) => s + (Number(l.value) || Number(l.estimate) || 0), 0);
+    const done = jobs.filter((l) => phaseOf(l) === 'complete');
+    const open = jobs.filter((l) => phaseOf(l) !== 'complete');
+    el.innerHTML =
+      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+        '<div class="kpi dark"><div class="lab">Active projects</div><div class="val">' + open.length + '</div><div class="sub">' + jobs.length + ' won all time</div></div>' +
+        '<div class="kpi pink"><div class="lab">Contract value</div><div class="val">' + money(value) + '</div><div class="sub">won work</div></div>' +
+        '<div class="kpi"><div class="lab">Completed</div><div class="val">' + done.length + '</div><div class="sub">ready for a review ask</div></div>' +
+        '<div class="kpi"><div class="lab">Avg job</div><div class="val">' + money(jobs.length ? value / jobs.length : 0) + '</div><div class="sub">per won project</div></div>' +
       '</div>' +
-      '<div class="grid3">' +
-        '<div class="panel"><div class="panel-head"><h2>By service</h2></div><div class="panel-body pad"><div class="bars">' + barsHTML(bySvc, 6) + '</div></div></div>' +
-        '<div class="panel"><div class="panel-head"><h2>By city</h2></div><div class="panel-body pad"><div class="bars">' + barsHTML(byCity, 6) + '</div></div></div>' +
-        '<div class="panel"><div class="panel-head"><h2>By source</h2></div><div class="panel-body pad"><div class="bars">' + barsHTML(bySource, 6) + '</div></div></div>' +
+      (jobs.length ? '<div class="grid4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">' +
+        PHASES.map(([k, label]) => {
+          const items = jobs.filter((l) => phaseOf(l) === k);
+          return '<div style="background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;min-height:120px">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><b style="font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">' + label + '</b>' +
+            '<span class="pill ' + (k === 'complete' ? 'won' : 'contacted') + '" style="margin-left:auto">' + items.length + '</span></div>' +
+            (items.length ? items.map((l) => {
+              const idx = PHASES.findIndex((p) => p[0] === k);
+              return '<div style="border:1px solid #F1EEEC;border-radius:11px;padding:11px;margin-bottom:8px;background:#FFFDFB">' +
+                '<b style="font-size:13px;display:block">' + QB.esc(l.name) + '</b>' +
+                '<div style="font-size:11.5px;color:var(--muted);margin:2px 0 6px">' + QB.esc((l._services || [])[0] || 'Project') + ' · ' + QB.esc(l.city || '') + '</div>' +
+                '<div style="font-family:var(--display);font-size:15px;margin-bottom:7px">' + money(Number(l.value) || Number(l.estimate) || 0) + '</div>' +
+                '<div style="height:5px;border-radius:4px;background:#F1EEEC;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:' + Math.round(((idx + 1) / PHASES.length) * 100) + '%;background:var(--pink)"></div></div>' +
+                '<div class="acts" style="gap:5px">' +
+                  (idx < PHASES.length - 1 ? '<button data-adv="' + l.id + '">Advance</button>' : '') +
+                  '<button data-pnote="' + l.id + '">Note</button>' +
+                  '<button data-popen="' + l.id + '">Open</button>' +
+                '</div></div>';
+            }).join('') : '<div style="font-size:12px;color:var(--muted);padding:8px 2px">Nothing here.</div>') +
+          '</div>';
+        }).join('') + '</div>'
+      : '<div class="panel"><div class="panel-body"><div class="empty">No won jobs yet. Move a request to Won on the pipeline and it becomes a project here.</div></div></div>');
+
+    $$('button[data-adv]').forEach((btn) => btn.onclick = async () => {
+      const l = state.leads.find((x) => x.id === btn.dataset.adv);
+      const i = PHASES.findIndex((p) => p[0] === phaseOf(l));
+      const next = PHASES[Math.min(i + 1, PHASES.length - 1)][0];
+      await patch(l.id, { stage: next, log: addTrail(l, 'project', 'Moved to ' + phaseLabel(next)) }, l.name + ' → ' + phaseLabel(next));
+    });
+    $$('button[data-pnote]').forEach((btn) => btn.onclick = async () => {
+      const l = state.leads.find((x) => x.id === btn.dataset.pnote);
+      const note = window.prompt('Note on ' + l.name, '');
+      if (!note) return;
+      await patch(l.id, { log: addTrail(l, 'note', note) }, 'Note saved');
+    });
+    $$('button[data-popen]').forEach((btn) => btn.onclick = () => openLead(btn.dataset.popen));
+  }
+
+  /* ---------- schedule ---------- */
+  function renderSchedule(el) {
+    const days = [];
+    const base = new Date();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(base.getTime() + i * 86400000);
+      days.push(d);
+    }
+    const booked = state.leads.filter((l) => l.walkthrough_at);
+    const forDay = (d) => booked.filter((l) => new Date(l.walkthrough_at).toDateString() === d.toDateString());
+    const week = days.slice(0, 7);
+    el.innerHTML =
+      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+        '<div class="kpi dark"><div class="lab">This week</div><div class="val">' + week.reduce((s, d) => s + forDay(d).length, 0) + '</div><div class="sub">walkthroughs booked</div></div>' +
+        '<div class="kpi pink"><div class="lab">Next 14 days</div><div class="val">' + booked.length + '</div><div class="sub">on the calendar</div></div>' +
+        '<div class="kpi"><div class="lab">Unbooked requests</div><div class="val">' + state.leads.filter((l) => !l.walkthrough_at && stageOf(l.status) !== 'lost').length + '</div><div class="sub">need a time</div></div>' +
+        '<div class="kpi"><div class="lab">Today</div><div class="val">' + forDay(new Date()).length + '</div><div class="sub">' + new Date().toLocaleDateString('en-US', { weekday: 'long' }) + '</div></div>' +
+      '</div>' +
+      '<div class="panel"><div class="panel-head"><h2>Walkthrough calendar</h2><div class="spacer"></div><button class="btn btn-pink btn-sm" id="bookBtn">Book a walkthrough</button></div>' +
+        '<div class="panel-body">' +
+          '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px">' +
+            week.map((d) => {
+              const items = forDay(d);
+              const today = d.toDateString() === new Date().toDateString();
+              return '<div style="border:1px solid ' + (today ? 'var(--pink)' : 'var(--line)') + ';border-radius:11px;padding:9px;min-height:96px;background:' + (today ? '#FFF8FA' : '#fff') + '">' +
+                '<div style="font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">' + d.toLocaleDateString('en-US', { weekday: 'short' }) + '</div>' +
+                '<div style="font-family:var(--display);font-size:17px;margin-bottom:6px">' + d.getDate() + '</div>' +
+                (items.length ? items.map((l) => '<div data-sopen="' + l.id + '" style="cursor:pointer;font-size:11px;font-weight:700;background:var(--pink-soft);border-radius:6px;padding:3px 5px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+                  new Date(l.walkthrough_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' ' + QB.esc(String(l.name).split(' ')[0]) + '</div>').join('')
+                  : '<div style="font-size:11px;color:#C4BFC3">—</div>') +
+                '</div>';
+            }).join('') +
+          '</div>' +
+          (booked.length ? '<table><thead><tr><th>When</th><th>Client</th><th>Address</th><th>Work</th><th></th></tr></thead><tbody>' +
+            booked.slice(0, 12).map((l) => '<tr data-id="' + l.id + '"><td><b>' + QB.esc(QB.fmtDate(l.walkthrough_at)) + '</b></td>' +
+              '<td>' + QB.esc(l.name) + '</td><td>' + QB.esc(l.address || '') + ', ' + QB.esc(l.city || '') + '</td>' +
+              '<td>' + QB.esc((l._services || [])[0] || '') + '</td>' +
+              '<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" data-sremind="' + l.id + '">Remind</button> ' +
+              '<button class="btn btn-outline btn-sm" data-smove="' + l.id + '">+1 day</button></td></tr>').join('') +
+            '</tbody></table>' : '<div class="empty">Nothing on the calendar. Book a walkthrough, or a client books one from the website and it lands here.</div>') +
+        '</div></div>';
+
+    $$('div[data-sopen]').forEach((n) => n.onclick = () => openLead(n.dataset.sopen));
+    $$('button[data-sremind]').forEach((btn) => btn.onclick = async (e) => {
+      e.stopPropagation();
+      const l = state.leads.find((x) => x.id === btn.dataset.sremind);
+      await patch(l.id, {
+        last_touch: new Date().toISOString(),
+        log: addTrail(l, 'text', 'Reminder text sent for the walkthrough on ' + QB.fmtDate(l.walkthrough_at))
+      }, 'Reminder sent to ' + String(l.name).split(' ')[0]);
+    });
+    $$('button[data-smove]').forEach((btn) => btn.onclick = async (e) => {
+      e.stopPropagation();
+      const l = state.leads.find((x) => x.id === btn.dataset.smove);
+      const when = new Date(new Date(l.walkthrough_at).getTime() + 86400000).toISOString();
+      await patch(l.id, { walkthrough_at: when, log: addTrail(l, 'walkthrough', 'Moved to ' + QB.fmtDate(when)) }, 'Moved one day');
+    });
+    const bk = $('#bookBtn');
+    if (bk) bk.onclick = () => bookModal();
+  }
+
+  function bookModal() {
+    const opts = state.leads.filter((l) => stageOf(l.status) !== 'lost').map((l) => '<option value="' + l.id + '">' + QB.esc(l.name) + ' · ' + QB.esc(l.city || '') + '</option>').join('');
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    modal('<h3>Book a walkthrough</h3>' +
+      '<label>Client</label><select id="bLead">' + opts + '</select>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label>Date</label><input id="bDate" type="date" value="' + tomorrow + '"></div>' +
+      '<div><label>Time</label><input id="bTime" type="time" value="09:00"></div></div>' +
+      '<label>Note (optional)</label><input id="bNote" placeholder="Gate code, dogs, parking">' +
+      '<div class="modal-acts"><button class="btn btn-outline btn-sm" id="mCancel">Cancel</button><button class="btn btn-pink btn-sm" id="mSave">Put it on the calendar</button></div>',
+      () => {
+        $('#mCancel').onclick = closeModal;
+        $('#mSave').onclick = async () => {
+          const l = state.leads.find((x) => x.id === $('#bLead').value);
+          if (!l) return QB.toast('Pick a client');
+          const when = new Date($('#bDate').value + 'T' + ($('#bTime').value || '09:00') + ':00').toISOString();
+          closeModal();
+          const alreadyWon = stageOf(l.status) === 'won';
+          await patch(l.id, {
+            walkthrough_at: when,
+            status: alreadyWon ? l.status : 'Walkthrough set',
+            stage: alreadyWon ? (PHASES.some((x) => x[0] === l.stage) ? l.stage : 'scheduled') : 'walkthrough',
+            notes: (l.notes ? l.notes + '\n' : '') + ($('#bNote').value.trim() || ''),
+            log: addTrail(l, 'walkthrough', 'Walkthrough booked for ' + QB.fmtDate(when))
+          }, 'Booked ' + String(l.name).split(' ')[0]);
+        };
+      });
+  }
+
+  /* ---------- photos ---------- */
+  async function renderPhotos(el) {
+    el.innerHTML = '<div class="empty">Loading photos…</div>';
+    const leads = state.leads.filter((l) => Number(l.photo_count) > 0);
+    const sets = {};
+    for (const l of leads.slice(0, 12)) {
+      if (!state.photos[l.ref]) {
+        try {
+          const r = await QB.api('photos', { ref: l.ref });
+          state.photos[l.ref] = r.photos || [];
+        } catch (e) {
+          state.photos[l.ref] = [];
+        }
+      }
+      sets[l.ref] = state.photos[l.ref];
+    }
+    const total = Object.values(sets).reduce((s, a) => s + a.length, 0);
+    const opts = state.leads.map((l) => '<option value="' + l.id + '">' + QB.esc(l.name) + ' · ' + QB.esc(l.ref) + '</option>').join('');
+    el.innerHTML =
+      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+        '<div class="kpi dark"><div class="lab">Photos</div><div class="val">' + total + '</div><div class="sub">from homeowners</div></div>' +
+        '<div class="kpi pink"><div class="lab">Requests with photos</div><div class="val">' + leads.length + '</div><div class="sub">of ' + state.leads.length + ' requests</div></div>' +
+        '<div class="kpi"><div class="lab">Avg per request</div><div class="val">' + (leads.length ? (total / leads.length).toFixed(1) : '0') + '</div><div class="sub">sent with the quote</div></div>' +
+        '<div class="kpi"><div class="lab">Storage</div><div class="val">' + (total * 0.12).toFixed(1) + ' MB</div><div class="sub">compressed on the phone</div></div>' +
+      '</div>' +
+      '<div class="panel"><div class="panel-head"><h2>Photo library</h2><div class="spacer"></div>' +
+        '<select id="pLead" style="border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;font-family:inherit;font-size:12.5px;font-weight:700;max-width:230px">' + opts + '</select>' +
+        '<button class="btn btn-pink btn-sm" id="pUp">Upload photos</button>' +
+        '<input type="file" id="pFile" accept="image/*" multiple style="display:none"></div>' +
+        '<div class="panel-body pad">' +
+          (leads.length ? leads.map((l) => '<div style="margin-bottom:22px">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><b style="font-size:13.5px">' + QB.esc(l.name) + '</b>' +
+            '<span style="font-size:11.5px;color:var(--muted)">' + QB.esc(l.ref) + ' · ' + QB.esc((l._services || [])[0] || '') + ' · ' + QB.esc(l.city || '') + '</span>' +
+            '<button class="btn btn-outline btn-sm" style="margin-left:auto" data-popen2="' + l.id + '">Open request</button></div>' +
+            '<div class="photo-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">' +
+              (sets[l.ref] || []).map((p) => '<figure style="margin:0;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#000;cursor:zoom-in" data-pimg="' + QB.esc(p.data) + '">' +
+                '<img src="' + QB.esc(p.data) + '" alt="' + QB.esc(p.note || 'Job photo') + '" style="width:100%;height:120px;object-fit:cover;display:block">' +
+                '<figcaption style="font-size:10.5px;color:var(--muted);padding:5px 6px;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + QB.esc(p.note || p.name) + '</figcaption></figure>').join('') +
+            '</div></div>').join('')
+          : '<div class="empty">No photos yet. They arrive with each quote request, or upload them here for a client who texted them in.</div>') +
+        '</div></div>';
+
+    $$('button[data-popen2]').forEach((b) => b.onclick = () => openLead(b.dataset.popen2));
+    $$('figure[data-pimg]').forEach((f) => f.onclick = () => {
+      const w = window.open('', '_blank');
+      if (!w) return QB.toast('Allow pop-ups to open the photo');
+      w.document.write('<body style="margin:0;background:#000;display:grid;place-items:center;height:100vh"><img src="' + f.dataset.pimg + '" style="max-width:100%;max-height:100vh"></body>');
+      w.document.close();
+    });
+    const up = $('#pUp'), file = $('#pFile');
+    if (up && file) {
+      up.onclick = () => file.click();
+      file.onchange = async () => {
+        const lead = state.leads.find((x) => x.id === $('#pLead').value);
+        if (!lead || !file.files.length) return;
+        QB.toast('Compressing ' + file.files.length + ' photo(s)…');
+        const photos = [];
+        for (const f of [...file.files].slice(0, 6)) {
+          const data = await QB.shrink(f, 1200, 0.72);
+          photos.push({ name: f.name, data, note: '' });
+        }
+        try {
+          const r = await QB.api('addPhotos', { ref: lead.ref, photos });
+          if (!r.ok) throw new Error(r.error || 'failed');
+          state.photos[lead.ref] = null;
+          state.leads = null;
+          const fresh = await QB.api('list', { limit: 300 });
+          state.leads = (fresh.leads || []).map(normalize);
+          QB.toast(r.saved + ' photo(s) added to ' + String(lead.name).split(' ')[0]);
+          render();
+        } catch (e) { QB.toast('Upload failed'); }
+      };
+    }
+  }
+
+  /* ---------- messages ---------- */
+  function renderMessages(el) {
+    const threads = state.leads.filter((l) => (l.chat && String(l.chat).length > 3) || (l.log || '').includes('"text"'));
+    const opts = state.leads.map((l) => '<option value="' + l.id + '">' + QB.esc(l.name) + ' · ' + QB.esc(l.phone || '') + '</option>').join('');
+    el.innerHTML =
+      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+        '<div class="kpi dark"><div class="lab">Conversations</div><div class="val">' + threads.length + '</div><div class="sub">with a transcript or a text</div></div>' +
+        '<div class="kpi pink"><div class="lab">Texts sent</div><div class="val">' + state.leads.reduce((s, l) => s + ((l.log || '').match(/"kind":"text"/g) || []).length, 0) + '</div><div class="sub">logged from this portal</div></div>' +
+        '<div class="kpi"><div class="lab">Bee chats</div><div class="val">' + state.leads.filter((l) => l.chat && String(l.chat).length > 3).length + '</div><div class="sub">website assistant transcripts</div></div>' +
+        '<div class="kpi"><div class="lab">Awaiting reply</div><div class="val">' + state.leads.filter((l) => stageOf(l.status) === 'new').length + '</div><div class="sub">new requests</div></div>' +
+      '</div>' +
+      '<div class="grid2">' +
+        '<div class="panel"><div class="panel-head"><h2>Threads</h2></div><div class="panel-body pad">' +
+          (threads.length ? threads.slice(0, 8).map((l) => {
+            const msgs = String(l.chat || '').split('\n').filter(Boolean).slice(-4);
+            return '<div style="border-bottom:1px solid #F3F0EE;padding:11px 0">' +
+              '<div style="display:flex;align-items:center;gap:8px"><b style="font-size:13px">' + QB.esc(l.name) + '</b>' +
+              '<span style="font-size:11px;color:var(--muted)">' + QB.esc(l.phone || '') + '</span>' +
+              '<button class="btn btn-outline btn-sm" style="margin-left:auto" data-mopen="' + l.id + '">Open</button></div>' +
+              (msgs.length ? msgs.map((m) => '<div style="font-size:12.5px;color:#5A5459;margin-top:4px">' + QB.esc(m) + '</div>').join('') : '<div style="font-size:12px;color:var(--muted);margin-top:3px">No transcript. Last touch ' + QB.esc(QB.fmtDate(l.last_touch)) + '</div>') +
+            '</div>';
+          }).join('') : '<div class="empty">No conversations yet. Bee saves every website chat here, and texts you send from the portal are logged on the client record.</div>') +
+        '</div></div>' +
+        '<div class="panel"><div class="panel-head"><h2>Send a text</h2></div><div class="panel-body pad">' +
+          '<label>Client</label><select id="mTo">' + opts + '</select>' +
+          '<label>Message</label><textarea id="mBody" rows="4" placeholder="Hi, this is Queen Bee\'s following up on your estimate…"></textarea>' +
+          '<div class="acts" style="margin-top:10px"><button class="primary" id="mSend">Send text</button><button id="mTpl">Use a template</button></div>' +
+          '<div style="font-size:11.5px;color:var(--muted);margin-top:10px">Sends from the business number and logs to the client record. Replies land in Threads.</div>' +
+        '</div></div>' +
       '</div>';
+    $$('button[data-mopen]').forEach((b) => b.onclick = () => openLead(b.dataset.mopen));
+    const send = $('#mSend');
+    if (send) send.onclick = async () => {
+      const l = state.leads.find((x) => x.id === $('#mTo').value);
+      const body = $('#mBody').value.trim();
+      if (!l) return QB.toast('Pick a client');
+      if (!body) return QB.toast('Write the message first');
+      await patch(l.id, {
+        last_touch: new Date().toISOString(),
+        log: addTrail(l, 'text', 'Text sent: ' + body.slice(0, 110))
+      }, 'Text sent to ' + String(l.name).split(' ')[0]);
+    };
+    const tpl = $('#mTpl');
+    if (tpl) tpl.onclick = () => {
+      const l = state.leads.find((x) => x.id === $('#mTo').value) || { name: 'there', city: '' };
+      $('#mBody').value = 'Hi ' + String(l.name).split(' ')[0] + ", it's Queen Bee's. Just checking in on your estimate. Want me to hold a walkthrough this week?";
+    };
+  }
+
+  /* ---------- analytics ---------- */
+  function renderAnalytics(el) {
+    if (!state.anRange) state.anRange = 30;
+    const since = Date.now() - state.anRange * 86400000;
+    const inRange = state.leads.filter((l) => new Date(l.created_date || 0).getTime() >= since);
+    const won = inRange.filter((l) => stageOf(l.status) === 'won');
+    const quoted = inRange.filter((l) => Number(l.estimate) > 0);
+    const avgQuote = quoted.length ? quoted.reduce((s, l) => s + Number(l.estimate), 0) / quoted.length : 0;
+    const bySource = {};
+    const byService = {};
+    const byCity = {};
+    inRange.forEach((l) => {
+      bySource[l.source || 'Website'] = (bySource[l.source || 'Website'] || 0) + 1;
+      (l._services || []).forEach((s) => { byService[s] = (byService[s] || 0) + 1; });
+      if (l.city) byCity[l.city] = (byCity[l.city] || 0) + 1;
+    });
+    const bars = (obj, color) => {
+      const max = Math.max(1, ...Object.values(obj));
+      const entries = Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      if (!entries.length) return '<div class="empty">No data in this range.</div>';
+      return entries.map(([k, v]) => '<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:3px"><span>' + QB.esc(k) + '</span><span>' + v + '</span></div>' +
+        '<div style="height:7px;border-radius:5px;background:#F1EEEC;overflow:hidden"><div style="height:100%;width:' + Math.round((v / max) * 100) + '%;background:' + color + '"></div></div></div>').join('');
+    };
+    el.innerHTML =
+      '<div class="acts" style="margin-bottom:14px">' + [30, 90, 365].map((d) => '<button data-range="' + d + '" class="' + (state.anRange === d ? 'primary' : '') + '">Last ' + d + ' days</button>').join('') + '</div>' +
+      '<div class="cards" style="grid-template-columns:repeat(4,1fr)">' +
+        '<div class="kpi dark"><div class="lab">Requests</div><div class="val">' + inRange.length + '</div><div class="sub">last ' + state.anRange + ' days</div></div>' +
+        '<div class="kpi pink"><div class="lab">Close rate</div><div class="val">' + (inRange.length ? Math.round((won.length / inRange.length) * 100) : 0) + '%</div><div class="sub">' + won.length + ' won</div></div>' +
+        '<div class="kpi"><div class="lab">Avg quoted</div><div class="val">' + money(avgQuote) + '</div><div class="sub">' + quoted.length + ' quotes</div></div>' +
+        '<div class="kpi"><div class="lab">Won value</div><div class="val">' + money(won.reduce((s, l) => s + (Number(l.value) || Number(l.estimate) || 0), 0)) + '</div><div class="sub">contract value</div></div>' +
+      '</div>' +
+      '<div class="grid2">' +
+        '<div class="panel"><div class="panel-head"><h2>Where requests come from</h2></div><div class="panel-body pad">' + bars(bySource, 'var(--pink)') + '</div></div>' +
+        '<div class="panel"><div class="panel-head"><h2>What they ask for</h2></div><div class="panel-body pad">' + bars(byService, 'var(--gold)') + '</div></div>' +
+      '</div>' +
+      '<div class="grid2" style="margin-top:14px">' +
+        '<div class="panel"><div class="panel-head"><h2>By city</h2></div><div class="panel-body pad">' + bars(byCity, '#0A0A0B') + '</div></div>' +
+        '<div class="panel"><div class="panel-head"><h2>Funnel</h2></div><div class="panel-body pad">' +
+          [['new', 'New request'], ['contacted', 'Contacted'], ['walkthrough', 'Walkthrough'], ['quote', 'Quote sent'], ['won', 'Won']].map(([k, label]) => {
+            const n = inRange.filter((l) => stageOf(l.status) === k).length;
+            const pct = inRange.length ? Math.round((n / inRange.length) * 100) : 0;
+            return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px"><span style="width:110px;font-size:12.5px;font-weight:700">' + label + '</span>' +
+              '<div style="flex:1;height:9px;border-radius:5px;background:#F1EEEC;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--ink)"></div></div>' +
+              '<b style="font-size:12.5px;width:42px;text-align:right">' + n + '</b></div>';
+          }).join('') +
+          '<div style="font-size:11.5px;color:var(--muted);margin-top:10px">Counted by current status, so a job that closed shows only in Won.</div>' +
+        '</div></div>' +
+      '</div>';
+    $$('button[data-range]').forEach((b) => b.onclick = () => { state.anRange = Number(b.dataset.range); render(); });
   }
 
   function renderSettings(el) {
@@ -1355,7 +1607,7 @@ tbody tr:hover{background:#FDFAFC;cursor:pointer}
       '.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ' + accent + ';padding-bottom:14px;margin-bottom:22px}' +
       '.brand{display:flex;gap:10px;align-items:center}.bee{width:44px;height:44px}' +
       '.nm{font-family:Georgia,serif;font-size:19px;font-weight:700}.sub{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:' + accent + ';margin-top:3px}' +
-      '.tag{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#D81E6E;font-weight:700}' +
+      '.tag{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#9F5C6E;font-weight:700}' +
       '.num{font-family:Georgia,serif;font-size:20px;margin-top:2px}' +
       'table{width:100%;border-collapse:collapse;margin-bottom:14px}' +
       'th{text-align:left;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#6C6A70;border-bottom:1px solid #E7E2DC;padding:7px 6px}' +

@@ -526,5 +526,5 @@ window.QB = (function () {
     });
   }
 
-  return { CONFIG, $, $$, money, esc, fmtDate, fmtDateTime, ago, initials, toast, api, compressImage, nextSlots, priceFor, mountChat, initReveal, initFaq, gcalUrl, icsString, downloadIcs, slotToDate, renderBooking };
+  return { CONFIG, $, $$, money, esc, fmtDate, fmtDateTime, ago, initials, toast, api, compressImage, nextSlots, priceFor, mountChat, initReveal, initFaq, shrink: compressImage, gcalUrl, icsString, downloadIcs, slotToDate, renderBooking };
 })();

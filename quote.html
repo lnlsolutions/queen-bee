@@ -13,7 +13,7 @@
 <style>
 .qwrap{background:var(--smoke);min-height:100vh;padding:0 0 70px}
 .qhead{background:var(--ink);color:#fff;padding:34px 0 30px;position:relative;overflow:hidden}
-.qhead:before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 80% 0%,rgba(255,61,139,.2),transparent 62%)}
+.qhead:before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 80% 0%,rgba(192,120,137,.2),transparent 62%)}
 .qhead .wrap{position:relative}
 .qhead h1{font-size:clamp(28px,3.4vw,40px);margin:8px 0 10px}
 .qhead p{color:rgba(255,255,255,.72);max-width:56ch;font-size:15.5px}
@@ -41,7 +41,7 @@
 .pick button{border:1.5px solid var(--line);background:#fff;border-radius:13px;padding:14px 12px;text-align:left;font-size:13.5px;font-weight:700;color:var(--text);transition:.16s;line-height:1.3}
 .pick button small{display:block;font-weight:600;color:var(--muted);font-size:11.5px;margin-top:3px}
 .pick button:hover{border-color:var(--gold)}
-.pick button.on{border-color:var(--pink);background:var(--pink-soft);box-shadow:0 6px 18px rgba(255,61,139,.14)}
+.pick button.on{border-color:var(--pink);background:var(--pink-soft);box-shadow:0 6px 18px rgba(192,120,137,.14)}
 .drop{border:2px dashed #DCD3D8;border-radius:16px;padding:34px 22px;text-align:center;background:#FDFBFC;transition:.18s;cursor:pointer}
 .drop:hover,.drop.over{border-color:var(--pink);background:var(--pink-soft)}
 .drop b{display:block;font-size:16px;margin-bottom:5px}
@@ -69,6 +69,21 @@
 </style>
 </head>
 <body>
+<div style="background:var(--ink);border-bottom:1px solid #24242A">
+  <div class="wrap" style="display:flex;align-items:center;gap:18px;padding:12px 0">
+    <a href="index.html" class="brand" style="text-decoration:none">
+      <img src="assets/img/logo.svg" alt="" style="width:26px;height:26px">
+      <span class="brand-txt"><span class="brand-name" style="font-size:14px;color:#fff">Queen Bee's</span></span>
+    </a>
+    <nav style="display:flex;gap:18px;margin-left:auto;align-items:center">
+      <a href="index.html" style="color:#C9C3C6;font-size:12.5px;font-weight:700;text-decoration:none">Home</a>
+      <a href="about.html" style="color:#C9C3C6;font-size:12.5px;font-weight:700;text-decoration:none">About</a>
+      <a href="index.html#work" style="color:#C9C3C6;font-size:12.5px;font-weight:700;text-decoration:none">Our work</a>
+      <a href="tel:+16025550142" style="color:#fff;font-size:12.5px;font-weight:800;text-decoration:none">(602) 555-0142</a>
+    </nav>
+  </div>
+</div>
+
 
 <header class="nav">
   <div class="wrap nav-in">
@@ -238,7 +253,7 @@
     <div class="card" id="successCard" style="display:none">
       <div class="done">
         <div class="tick">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#D81E6E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#9F5C6E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
         <h2>You're in the hive.</h2>
         <p>Your request is with the estimator now. We review photos the same business day and send a written estimate, usually within 48 hours.</p>
